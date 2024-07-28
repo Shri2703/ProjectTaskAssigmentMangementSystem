@@ -1,268 +1,279 @@
-const express = require('express')
-const mongoose = require('mongoose')
-const jwt = require('jsonwebtoken')
-const bcrypt = require('bcryptjs')
-const bodyParser = require('body-parser')
-const { check, validationResult } = require('express-validator')
-const cors = require('cors')
 
-const app = express()
-app.use(bodyParser.json())
-app.use(cors())
 
-const JWT_SECRET = 'secret123'
-const PORT = process.env.PORT || 5000
 
-// MongoDB Connection
-mongoose
-  .connect(
-    'mongodb+srv://poornashri2703:jwtauth8777@cluster0.q4itzl8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }
-  )
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.log(err))
+const express = require('express');
+const mongoose = require('mongoose');
+const formidable = require('formidable');
+const fs = require('fs');
+const path = require('path');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
 
-// User Schema
+dotenv.config(); // Load environment variables
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// MongoDB Schemas
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['admin', 'member'], required: true },
-})
+  role: { type: String, enum: ['admin', 'member'], default: 'member' }
+});
 
-const User = mongoose.model('User', userSchema)
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
 
-// Project Schema
+const User = mongoose.model('User', userSchema);
+
 const projectSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  description: { type: String },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-})
+  description: { type: String, required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
+});
 
-const Project = mongoose.model('Project', projectSchema)
+const Project = mongoose.model('Project', projectSchema);
 
-// Task Schema
 const taskSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String },
-  status: {
-    type: String,
-    enum: ['pending', 'in-progress', 'completed'],
-    default: 'pending',
-  },
-  projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
-  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-})
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
+});
 
-const Task = mongoose.model('Task', taskSchema)
+const Task = mongoose.model('Task', taskSchema);
 
-// Middleware for verifying JWT tokens
-const authenticateJWT = (req, res, next) => {
-  const token =
-    req.headers.authorization && req.headers.authorization.split(' ')[1]
+mongoose.connect(
+  'mongodb+srv://poornashri2703:poorna8777@cluster0.wijm5gs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }
+)
 
-  if (token) {
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+app.use(express.json());
+
+// Middleware for authentication
+const auth = async (req, res, next) => {
+  const token = req.header('Authorization').replace('Bearer ', '');
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({ _id: decoded._id, 'tokens.token': token });
+    if (!user) throw new Error();
+    req.user = user;
+    req.token = token;
+    next();
+  } catch (error) {
+    res.status(401).send({ error: 'Please authenticate.' });
+  }
+};
+
+// User registration
+app.post('/api/users/register', async (req, res) => {
+  const { name, email, password, role } = req.body;
+  try {
+    const user = new User({ name, email, password, role });
+    await user.save();
+    res.status(201).send(user);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+// User login
+app.post('/api/users/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(400).send({ error: 'Invalid email or password' });
+    }
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+    res.send({ user, token });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Create project
+app.post('/api/projects', auth, async (req, res) => {
+  const project = new Project({ ...req.body, user: req.user._id });
+  try {
+    await project.save();
+    res.status(201).send(project);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+// Read all projects
+app.get('/api/projects', auth, async (req, res) => {
+  try {
+    const projects = await Project.find({ user: req.user._id });
+    res.send(projects);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Read single project
+app.get('/api/projects/:id', auth, async (req, res) => {
+  try {
+    const project = await Project.findOne({ _id: req.params.id, user: req.user._id });
+    if (!project) return res.status(404).send();
+    res.send(project);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Update project
+app.patch('/api/projects/:id', auth, async (req, res) => {
+  try {
+    const project = await Project.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!project) return res.status(404).send();
+    res.send(project);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+// Delete project
+app.delete('/api/projects/:id', auth, async (req, res) => {
+  try {
+    const project = await Project.findOneAndDelete({ _id: req.params.id, user: req.user._id });
+    if (!project) return res.status(404).send();
+    res.send(project);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Create task
+app.post('/api/tasks', auth, async (req, res) => {
+  const task = new Task({ ...req.body, user: req.user._id });
+  try {
+    await task.save();
+    res.status(201).send(task);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+// Read all tasks
+app.get('/api/tasks', auth, async (req, res) => {
+  try {
+    const tasks = await Task.find({ user: req.user._id });
+    res.send(tasks);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Read single task
+app.get('/api/tasks/:id', auth, async (req, res) => {
+  try {
+    const task = await Task.findOne({ _id: req.params.id, user: req.user._id });
+    if (!task) return res.status(404).send();
+    res.send(task);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Update task
+app.patch('/api/tasks/:id', auth, async (req, res) => {
+  try {
+    const task = await Task.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!task) return res.status(404).send();
+    res.send(task);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+// Delete task
+app.delete('/api/tasks/:id', auth, async (req, res) => {
+  try {
+    const task = await Task.findOneAndDelete({ _id: req.params.id, user: req.user._id });
+    if (!task) return res.status(404).send();
+    res.send(task);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// File upload endpoint
+app.post('/api/upload', auth, (req, res) => {
+  const form = new formidable.IncomingForm();
+  form.uploadDir = path.join(__dirname, 'uploads');
+  form.keepExtensions = true;
+
+  form.parse(req, (err, fields, files) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    const oldPath = files.file.path;
+    const newPath = path.join(form.uploadDir, files.file.name);
+
+    fs.rename(oldPath, newPath, (err) => {
       if (err) {
-        return res.sendStatus(403)
+        return res.status(400).json({ error: err.message });
       }
-      req.user = user
-      next()
-    })
-  } else {
-    res.sendStatus(401)
-  }
-}
+      res.json({ message: 'File uploaded successfully', file: files.file });
+    });
+  });
+});
 
-// Middleware for authorizing admin roles
-const authorizeAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.sendStatus(403)
-  }
-  next()
-}
-
-// Registration
-app.post(
-  '/register',
-  [
-    check('name').not().isEmpty().withMessage('Name is required'),
-    check('email').isEmail().withMessage('Enter a valid email'),
-    check('password')
-      .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters long'),
-    check('role')
-      .isIn(['admin', 'member'])
-      .withMessage('Role must be either admin or member'),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() })
-    }
-
-    const { name, email, password, role } = req.body
-
-    try {
-      let user = await User.findOne({ email })
-      if (user) {
-        return res.status(400).json({ message: 'User already exists' })
-      }
-
-      user = new User({
-        name,
-        email,
-        password: await bcrypt.hash(password, 10),
-        role,
-      })
-      await user.save()
-
-      res.status(201).json({ message: 'User registered successfully' })
-    } catch (err) {
-      res.status(500).json({ message: 'Server error' })
-    }
-  }
-)
-
-// Login
-app.post(
-  '/login',
-  [
-    check('email').isEmail().withMessage('Enter a valid email'),
-    check('password').not().isEmpty().withMessage('Password is required'),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() })
-    }
-
-    const { email, password } = req.body
-
-    try {
-      const user = await User.findOne({ email })
-      if (!user) {
-        return res.status(400).json({ message: 'Invalid credentials' })
-      }
-
-      const isMatch = await bcrypt.compare(password, user.password)
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' })
-      }
-
-      const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
-        expiresIn: '1h',
-      })
-
-      res.json({ token })
-    } catch (err) {
-      res.status(500).json({ message: 'Server error' })
-    }
-  }
-)
-
-// Fetch All Users (Admin Only)
-app.get('/users', authenticateJWT, authorizeAdmin, async (req, res) => {
+// Search projects
+app.get('/api/projects/search/:query', auth, async (req, res) => {
   try {
-    const users = await User.find()
-    res.json(users)
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' })
+    const query = req.params.query;
+    const projects = await Project.find({
+      user: req.user._id,
+      $or: [{ name: new RegExp(query, 'i') }, { description: new RegExp(query, 'i') }],
+    });
+    res.send(projects);
+  } catch (error) {
+    res.status(500).send(error);
   }
-})
+});
 
-// CRUD for Projects
-app.post('/projects', authenticateJWT, async (req, res) => {
+// Search tasks
+app.get('/api/tasks/search/:query', auth, async (req, res) => {
   try {
-    const { name, description } = req.body
-    const project = new Project({ name, description, createdBy: req.user.id })
-    await project.save()
-    res.status(201).json(project)
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' })
+    const query = req.params.query;
+    const tasks = await Task.find({
+      user: req.user._id,
+      $or: [{ name: new RegExp(query, 'i') }, { description: new RegExp(query, 'i') }],
+    });
+    res.send(tasks);
+  } catch (error) {
+    res.status(500).send(error);
   }
-})
+});
 
-app.get('/projects', authenticateJWT, async (req, res) => {
-  try {
-    const projects = await Project.find({ createdBy: req.user.id })
-    res.json(projects)
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send({ error: 'Something went wrong!' });
+});
 
-app.put('/projects/:id', authenticateJWT, async (req, res) => {
-  try {
-    const { name, description } = req.body
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { name, description },
-      { new: true }
-    )
-    res.json(project)
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
-
-app.delete('/projects/:id', authenticateJWT, async (req, res) => {
-  try {
-    await Project.findByIdAndDelete(req.params.id)
-    res.json({ message: 'Project deleted' })
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
-
-// CRUD for Tasks
-app.post('/tasks', authenticateJWT, async (req, res) => {
-  try {
-    const { title, description, status, projectId, assignedTo } = req.body
-    const task = new Task({ title, description, status, projectId, assignedTo })
-    await task.save()
-    res.status(201).json(task)
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
-
-app.get('/tasks', authenticateJWT, async (req, res) => {
-  try {
-    const tasks = await Task.find().populate('projectId').populate('assignedTo')
-    res.json(tasks)
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
-
-app.put('/tasks/:id', authenticateJWT, async (req, res) => {
-  try {
-    const { title, description, status, projectId, assignedTo } = req.body
-    const task = await Task.findByIdAndUpdate(
-      req.params.id,
-      { title, description, status, projectId, assignedTo },
-      { new: true }
-    )
-    res.json(task)
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
-
-app.delete('/tasks/:id', authenticateJWT, async (req, res) => {
-  try {
-    await Task.findByIdAndDelete(req.params.id)
-    res.json({ message: 'Task deleted' })
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
-
-// Start the server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
+  console.log(`Server is running on port ${PORT}`);
+});
