@@ -1,0 +1,23 @@
+.profile .profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.profile .profile-form label {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile .profile-form input[type="submit"] {
+  align-self: flex-start;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5em 1em;
+  cursor: pointer;
+}
+
+.profile .profile-form input[type="submit"]:hover {
+  background-color: var(--secondary-color);
+}
