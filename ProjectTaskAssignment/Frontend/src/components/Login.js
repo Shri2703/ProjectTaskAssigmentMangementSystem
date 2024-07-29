@@ -1,41 +1,49 @@
 import React, { useState } from 'react'
-import { useDispatch } from 'react-redux'
-import { login } from '../actions/authActions'
+import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
+
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
+  const navigate = useNavigate()
 
-  const dispatch = useDispatch()
+  const { email, password } = formData
 
-  const handleChange = (e) => {
+  const onChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
 
-  const handleSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
-    dispatch(login(formData))
+    try {
+      const res = await axios.post('http://localhost:5000/login', formData)
+      console.log(res.data)
+      // Handle token storage and redirection here
+      navigate('/dashboard')
+    } catch (err) {
+      console.error(err.response.data)
+    }
   }
 
   return (
-    <div>
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
+    <div className='login-container'>
+      <form className='login-form' onSubmit={onSubmit}>
+        <h2>Login</h2>
         <input
           type='email'
           name='email'
-          value={formData.email}
-          onChange={handleChange}
+          value={email}
+          onChange={onChange}
           placeholder='Email'
           required
         />
         <input
           type='password'
           name='password'
-          value={formData.password}
-          onChange={handleChange}
+          value={password}
+          onChange={onChange}
           placeholder='Password'
           required
         />
