@@ -1,20 +1,32 @@
-import { SET_CURRENT_USER } from '../types'
-import isEmpty from 'lodash/isEmpty'
+// src/redux/reducers/authReducer.js
+import { SET_TOKEN, SET_CURRENT_USER, LOGOUT_USER } from '../types'
 
 const initialState = {
-  isAuthenticated: false,
-  user: {},
+  token: null,
+  user: null,
 }
 
-export default function (state = initialState, action) {
+const authReducer = (state = initialState, action) => {
   switch (action.type) {
+    case SET_TOKEN:
+      return {
+        ...state,
+        token: action.payload,
+      }
     case SET_CURRENT_USER:
       return {
         ...state,
-        isAuthenticated: !isEmpty(action.payload),
         user: action.payload,
+      }
+    case LOGOUT_USER:
+      return {
+        ...state,
+        token: null,
+        user: null,
       }
     default:
       return state
   }
 }
+
+export default authReducer

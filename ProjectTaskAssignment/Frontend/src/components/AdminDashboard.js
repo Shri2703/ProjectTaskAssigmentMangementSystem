@@ -1,32 +1,32 @@
 // src/components/AdminDashboard.js
 
-import React, { useEffect, useState } from 'react';
-import { getProjects, getUsers } from '../api/admin'; // Replace with your API calls
+import React, { useEffect, useState } from 'react'
+import { getProjects, getUsers } from '../api/admin' // Replace with your API calls
 
 const AdminDashboard = () => {
-  const [projects, setProjects] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [projects, setProjects] = useState([])
+  const [users, setUsers] = useState([])
 
   useEffect(() => {
     // Fetch projects and users for admin
     const fetchProjectsAndUsers = async () => {
       try {
-        const projectsData = await getProjects(); // Implement this API call
-        const usersData = await getUsers(); // Implement this API call
-        setProjects(projectsData);
-        setUsers(usersData);
+        const projectsData = await getProjects() // Implement this API call
+        const usersData = await getUsers() // Implement this API call
+        setProjects(projectsData)
+        setUsers(usersData)
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching data:', error)
       }
-    };
+    }
 
-    fetchProjectsAndUsers();
-  }, []);
+    fetchProjectsAndUsers()
+  }, [])
 
   return (
-    <div className="admin-dashboard">
+    <div className='admin-dashboard'>
       <h1>Admin Dashboard</h1>
-      <div className="projects">
+      <div className='projects'>
         <h2>All Projects</h2>
         {projects.length > 0 ? (
           <ul>
@@ -41,7 +41,7 @@ const AdminDashboard = () => {
           <p>No projects found.</p>
         )}
       </div>
-      <div className="users">
+      <div className='users'>
         <h2>All Users</h2>
         {users.length > 0 ? (
           <ul>
@@ -57,7 +57,7 @@ const AdminDashboard = () => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AdminDashboard;
+export default AdminDashboard
