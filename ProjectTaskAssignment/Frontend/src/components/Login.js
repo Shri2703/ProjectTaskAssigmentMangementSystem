@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { login } from '../redux/actions/authActions'
+import { login } from '../actions/authActions'
 
 const Login = () => {
   const [formData, setFormData] = useState({

@@ -1,23 +1,19 @@
 import React from 'react'
-import { BrowserRouter as Router, Route,  Routes } from 'react-router-dom'
-import { Provider } from 'react-redux'
-import store from './redux/store'
-import Register from './pages/Register'
-import Login from './pages/Login'
-import Home from './pages/Home'
+import { Routes, Route, Router } from 'react-router-dom'
+import Home from './components/Home'
+import Login from './components/Login'
+import Register from './components/Register'
 
 function App() {
   return (
-    <Provider store={store}>
-      <Router>
-        <Routes>
-
-          <Route path='/' component={Home} />
-          <Route path='/register' component={Register} />
-          <Route path='/login' component={Login} />
-        </Routes>
-      </Router>
-    </Provider>
+    <Router>
+      <Routes>
+        <Route path='/' element={<Home />} />
+        <Route path='/register' element={<Register />} />
+        <Route path='/login' element={<Login />} />
+        {/* Add other routes here */}
+      </Routes>
+    </Router>
   )
 }
 
