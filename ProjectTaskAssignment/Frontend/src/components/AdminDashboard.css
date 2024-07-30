@@ -1,10 +1,12 @@
-/* AdminDashboard.css */
+AdminDashboard.css
 .bg-some{
   background-color:#e5e5e5;
 }
 .sidebar {
   width: 250px;
   min-height: 100vh;
+   background-color: #343a40;
+  color: #fff;
 }
 
 .text-bold{

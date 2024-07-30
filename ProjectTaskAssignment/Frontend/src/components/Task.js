@@ -4,6 +4,7 @@ import { getProjects } from '../api/project'
 import { getUsers } from '../api/member'
 import Button from '../components/Button'
 import CreateTask from './CreateTask'
+import './AdminDashboard.css'
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([])
@@ -79,7 +80,7 @@ const TaskList = () => {
   return (
     <div>
       <div className='d-flex justify-content-between mb-4'>
-        <h2>Tasks</h2>
+        <h2 className='text-bold'>Tasks</h2>
         <Button onClick={handleCreateTask} variant='primary'>
           {showCreateForm ? 'Hide Form' : 'Create New Task'}
         </Button>
@@ -91,7 +92,6 @@ const TaskList = () => {
           />
         )}
       </div>
-      
 
       {showUpdateForm && (
         <div className='card mt-4'>
@@ -181,11 +181,15 @@ const TaskList = () => {
               <div className='col-md-4 mb-4' key={task._id}>
                 <div className='card'>
                   <div className='card-body'>
-                    <h5 className='card-title'>{task.title}</h5>
-                    <p className='card-text'>{task.description}</p>
-                    <p className='card-text'>Status: {task.status}</p>
-                    <p className='card-text'>Project: {task.projectName}</p>
-                    <p className='card-text'>
+                    <h4 className='card-title text-bold'>{task.title}</h4>
+                    <p className='card-text text-basic'>{task.description}</p>
+                    <p className='card-text text-basic'>
+                      Status: {task.status}
+                    </p>
+                    <p className='card-text text-basic'>
+                      Project: {task.projectName}
+                    </p>
+                    <p className='card-text text-basic'>
                       Assigned To: {task.assignedUserName}
                     </p>
                     <div className='d-flex justify-content-between'>

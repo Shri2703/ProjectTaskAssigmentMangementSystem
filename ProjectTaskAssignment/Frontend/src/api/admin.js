@@ -2,6 +2,7 @@ import axios from 'axios'
 
 const API_URL = 'http://localhost:5000'
 
+// Projects API
 export const getProjects = async () => {
   const response = await axios.get(`${API_URL}/projects`)
   return response.data
@@ -22,6 +23,7 @@ export const deleteProject = async (projectId) => {
   return response.data
 }
 
+// Users API
 export const getUsers = async () => {
   const response = await axios.get(`${API_URL}/members`)
   return response.data
@@ -42,6 +44,7 @@ export const deleteUser = async (userId) => {
   return response.data
 }
 
+// Tasks API
 export const getTasks = async () => {
   const response = await axios.get(`${API_URL}/tasks`)
   return response.data
@@ -62,12 +65,29 @@ export const deleteTask = async (taskId) => {
   return response.data
 }
 
+// Users with Counts API
 export const getUsersWithCounts = async () => {
   try {
     const response = await axios.get(`${API_URL}/api/usersWithCounts`)
     return response.data
   } catch (error) {
     console.error('Error fetching users with task counts:', error)
+    throw error
+  }
+}
+
+// Profile API
+export const updateProfile = async (profileData) => {
+  try {
+    const token = localStorage.getItem('token') // Retrieve the JWT token from localStorage
+    const response = await axios.put(`${API_URL}/profile`, profileData, {
+      headers: {
+        Authorization: `Bearer ${token}`, // Include token in the request headers
+      },
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error updating profile:', error)
     throw error
   }
 }

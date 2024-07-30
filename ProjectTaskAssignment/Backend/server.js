@@ -80,6 +80,23 @@ const fileSchema = new mongoose.Schema({
 
 const File = mongoose.model('File', fileSchema)
 
+const authenticateJWT = (req, res, next) => {
+  const token =
+    req.headers.authorization && req.headers.authorization.split(' ')[1]
+
+  if (token) {
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (err) {
+        return res.sendStatus(403)
+      }
+      req.user = user
+      next()
+    })
+  } else {
+    res.sendStatus(401)
+  }
+}
+
 // Hardcoded Admins
 const hardcodedAdmins = [
   {
@@ -336,6 +353,57 @@ app.get('/api/usersWithCounts', async (req, res) => {
   }
 });
 
+
+app.put('/profile', authenticateJWT, async (req, res) => {
+  const { username, email, password } = req.body
+
+  try {
+    const user = await User.findById(req.user.id)
+    if (!user) return res.status(404).json({ message: 'User not found' })
+
+    // Update user details
+    if (username) user.username = username
+    if (email) user.email = email
+    if (password) {
+      const salt = await bcrypt.genSalt(10)
+      user.password = await bcrypt.hash(password, salt)
+    }
+
+    await user.save()
+    res.status(200).json({ message: 'Profile updated successfully' })
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error })
+  }
+})
+
+app.get('/profile', authenticateJWT, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id) // Assuming req.user is set by authenticateJWT middleware
+    if (!user) return res.status(404).json({ message: 'User not found' })
+    res.json(user)
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
+// Update the user profile
+app.put('/profile', authenticateJWT, async (req, res) => {
+  try {
+    const { name, email, password } = req.body
+    const user = await User.findById(req.user._id)
+    if (!user) return res.status(404).json({ message: 'User not found' })
+
+    // Update the user fields
+    if (name) user.name = name
+    if (email) user.email = email
+    if (password) user.password = await User.hashPassword(password) // Assuming hashPassword is a method to hash passwords
+
+    await user.save()
+    res.json({ message: 'Profile updated successfully', user })
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

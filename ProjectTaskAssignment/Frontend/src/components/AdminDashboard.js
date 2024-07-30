@@ -6,11 +6,16 @@ import {
   updateProject,
   deleteProject,
   getUsersWithCounts,
+  
 } from '../api/admin'
+import { FaBell, FaSearch } from 'react-icons/fa'
+
 import Button from '../components/Button'
 import './AdminDashboard.css'
 import Tasks from './Task' // Adjust the path as necessary
-
+import axios from 'axios'
+import { useSelector } from 'react-redux'
+const API_URL = 'http://localhost:5000'; 
 const AdminDashboard = () => {
   const [projects, setProjects] = useState([])
   const [users, setUsers] = useState([])
@@ -27,23 +32,76 @@ const AdminDashboard = () => {
     name: '',
     description: '',
   })
+  
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: '',
+    password: '',
+  })
+
+  const token = useSelector((state) => state.auth.token)
+
+   const fetchProfileData = async () => {
+     try {
+       if (!token) {
+         console.error('No authentication token found')
+         return
+       }
+       const response = await axios.get(`${API_URL}/profile`, {
+         headers: {
+           Authorization: `Bearer ${token}`, // Include the token in the request headers
+         },
+       })
+       const profile = response.data
+       setProfileData(profile) // Update state with fetched profile data
+     } catch (error) {
+       console.error('Error fetching profile data:', error)
+     }
+   }
+
+   useEffect(() => {
+     fetchProfileData()
+   }, [token]) // Re-fetch profile data when token changes
+
+   const handleProfileUpdate = async () => {
+     try {
+       if (!token) {
+         console.error('No authentication token found')
+         return
+       }
+       const response = await axios.put(`${API_URL}/profile`, profileData, {
+         headers: {
+           Authorization: `Bearer ${token}`, // Include the token in the request headers
+         },
+       })
+       const updatedProfile = response.data
+       setProfileData(updatedProfile) // Update state with new data
+       alert('Profile updated successfully!')
+     } catch (error) {
+       console.error('Error updating profile:', error)
+     }
+   }
 
 
   
 
-  useEffect(() => {
-    const fetchUsersWithCounts = async () => {
-      try {
-        const usersWithCountsData = await getUsersWithCounts()
-        console.log('Users with counts data:', usersWithCountsData) // Log the data for debugging
-        setUsers(usersWithCountsData)
-      } catch (error) {
-        console.error('Error fetching users with counts:', error)
-      }
-    }
+ useEffect(() => {
+   const fetchUsersWithCounts = async () => {
+     try {
+       const data = await getUsersWithCounts()
+       console.log('Users with counts data:', data)
+       setUsers(data) // Update state with fetched data
+     } catch (error) {
+       console.error('Error fetching users with counts:', error)
+     }
+   }
 
-    fetchUsersWithCounts()
-  }, [])
+   fetchUsersWithCounts()
+ }, [])
 
   useEffect(() => {
     const fetchProjectsAndUsers = async () => {
@@ -129,11 +187,13 @@ const AdminDashboard = () => {
     setUpdatedProject((prev) => ({ ...prev, [name]: value }))
   }
 
-  
+   
+
+
 
   return (
-    <div className='container-fluid d-flex'>
-      <div className='sidebar bg-light p-3 pt-5 '>
+    <div className='container-fluid p-0 d-flex'>
+      <div className=' sidebar px-3 pt-5 '>
         <ul className='nav flex-column'>
           <li
             className={`nav-item mt-2 ${
@@ -141,7 +201,7 @@ const AdminDashboard = () => {
             }`}
             onClick={() => handleTabClick('projects')}
           >
-            <a className='nav-link text-dark'>Projects</a>
+            <a className='nav-link '>Projects</a>
           </li>
           <li
             className={`nav-item mt-2 ${
@@ -149,7 +209,7 @@ const AdminDashboard = () => {
             }`}
             onClick={() => handleTabClick('tasks')}
           >
-            <a className='nav-link text-dark'>Tasks</a>
+            <a className='nav-link '>Tasks</a>
           </li>
           <li
             className={`nav-item mt-2 ${
@@ -157,37 +217,46 @@ const AdminDashboard = () => {
             }`}
             onClick={() => handleTabClick('users')}
           >
-            <a className='nav-link text-dark'>Users</a>
+            <a className='nav-link '>Users</a>
           </li>
           <li
+            className={`nav-item mt-2 ${
+              selectedTab === 'signout' ? 'active' : ''
+            }`}
+            onClick={() => handleTabClick('Signout')}
+          >
+            <a className='nav-link '>Signout</a>
+          </li>
+          {/* <li
             className={`nav-item mt-2 ${
               selectedTab === 'profile' ? 'active' : ''
             }`}
             onClick={() => handleTabClick('profile')}
           >
             <a className='nav-link text-dark'>Profile</a>
-          </li>
+          </li> */}
         </ul>
       </div>
       <div className='main-content flex-fill p-4 bg-some'>
-        <div className='header d-flex justify-content-between align-items-center mb-4'>
-          <h1>Welcome to Admin Dashboard</h1>
-          <div className='d-flex align-items-center'>
-            <Button
-              variant='secondary'
-              onClick={() => {
-                /* Handle logout or other action */
-              }}
-            >
-              <i className='fas fa-sign-out-alt'></i>
-            </Button>
+        <div className='search-header'>
+          <div className='search-bar'>
+            <input type='text' placeholder='Search...' />
+            <button>
+              <FaSearch />
+            </button>
           </div>
+          <div className='user-info'>
+            <span className='username'>Admin</span>
+          </div>
+        </div>
+        <div className='header d-flex justify-content-between align-items-center mb-4 pt-5'>
+          <h1>Welcome to Admin Dashboard</h1>
         </div>
         <div className='content'>
           {selectedTab === 'projects' && (
             <div>
               <div className='d-flex justify-content-between mb-4'>
-                <h2>All Projects</h2>
+                <h2 className='text-bold'>All Projects</h2>
                 <Button
                   variant='success'
                   onClick={() => setShowCreateForm(!showCreateForm)}
@@ -281,7 +350,7 @@ const AdminDashboard = () => {
           {selectedTab === 'tasks' && <Tasks />}
           {selectedTab === 'users' && (
             <div>
-              <h2>All Users</h2>
+              <h2 className='text-bold'>All Users</h2>
               <div className='row'>
                 {users.length === 0 ? (
                   <p>No users available.</p>
@@ -290,8 +359,8 @@ const AdminDashboard = () => {
                     <div className='col-md-4 mb-4' key={user._id}>
                       <div className='card'>
                         <div className='card-body'>
-                          <h5 className='card-title text-bold'>{user.name}</h5>
-                          <p className='card-text text-basic'>{user.email}</p>
+                          <h5 className='card-title text-basic'>Name:{user.name}</h5>
+                          <p className='card-text text-basic'>E-Mail: {user.email}</p>
                           <p className='card-text text-basic'>
                             Tasks: {user.taskCount || 0}
                           </p>
@@ -303,14 +372,63 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
-          {selectedTab === 'profile' && (
-            <div className='card'>
-              <div className='card-body'>
-                <h5 className='card-title'>Profile</h5>
-                <p className='card-text'>Username: {username}</p>
-              </div>
+          {/* {selectedTab === 'profile' && (
+            <div>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  handleProfileUpdate() // Use the locally defined function
+                }}
+              >
+                <div className='mb-3'>
+                  <input
+                    type='text'
+                    className='form-control'
+                    placeholder='Name'
+                    value={profileData.name}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        name: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className='mb-3'>
+                  <input
+                    type='email'
+                    className='form-control'
+                    placeholder='Email'
+                    value={profileData.email}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        email: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className='mb-3'>
+                  <input
+                    type='password'
+                    className='form-control'
+                    placeholder='Password'
+                    value={profileData.password}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        password: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <button type='submit' className='btn btn-primary'>
+                  Update Profile
+                </button>
+              </form>
             </div>
-          )}
+          )} */}
+
           {isUpdating && selectedTab === 'projects' && (
             <div className='card mt-4'>
               <div className='card-body'>
