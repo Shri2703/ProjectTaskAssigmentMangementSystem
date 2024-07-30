@@ -61,3 +61,13 @@ export const deleteTask = async (taskId) => {
   const response = await axios.delete(`${API_URL}/tasks/${taskId}`)
   return response.data
 }
+
+export const getUsersWithCounts = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/usersWithCounts`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching users with task counts:', error)
+    throw error
+  }
+}

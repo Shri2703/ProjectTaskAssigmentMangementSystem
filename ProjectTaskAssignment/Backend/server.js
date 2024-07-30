@@ -227,7 +227,7 @@ app.put('/projects/:id', async (req, res) => {
     )
     res.json(project)
   } catch (err) {
-    res.status(500).json({ message: 'Server error' })
+    res.status (500).json({ message: 'Server error' })
   }
 })
 
@@ -295,19 +295,47 @@ app.post('/upload', (req, res) => {
       return res.status(500).json({ message: 'File upload error' })
     }
 
-    const file = files.file[0]
-    const newFile = new File({
-      name: file.originalFilename,
-      path: file.filepath,
+    const file = new File({
+      name: files.file.name,
+      path: files.file.path,
     })
 
     try {
-      await newFile.save()
-      res.json(newFile)
+      await file.save()
+      res.status(201).json(file)
     } catch (err) {
       res.status(500).json({ message: 'Server error' })
     }
   })
 })
+
+// New Endpoint to Fetch Users with Project and Task Counts
+// Get users with project and task counts
+// Get users with task counts
+app.get('/api/usersWithCounts', async (req, res) => {
+  try {
+    const users = await Member.find(); // Assuming you're interested in members
+
+    const userData = await Promise.all(
+      users.map(async (user) => {
+        const taskCount = await Task.countDocuments({ assignedTo: user._id });
+
+        return {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          taskCount,
+        };
+      })
+    );
+
+    res.json(userData);
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

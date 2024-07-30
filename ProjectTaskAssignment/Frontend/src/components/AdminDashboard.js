@@ -5,6 +5,7 @@ import {
   createProject,
   updateProject,
   deleteProject,
+  getUsersWithCounts,
 } from '../api/admin'
 import Button from '../components/Button'
 import './AdminDashboard.css'
@@ -26,6 +27,23 @@ const AdminDashboard = () => {
     name: '',
     description: '',
   })
+
+
+  
+
+  useEffect(() => {
+    const fetchUsersWithCounts = async () => {
+      try {
+        const usersWithCountsData = await getUsersWithCounts()
+        console.log('Users with counts data:', usersWithCountsData) // Log the data for debugging
+        setUsers(usersWithCountsData)
+      } catch (error) {
+        console.error('Error fetching users with counts:', error)
+      }
+    }
+
+    fetchUsersWithCounts()
+  }, [])
 
   useEffect(() => {
     const fetchProjectsAndUsers = async () => {
@@ -110,6 +128,8 @@ const AdminDashboard = () => {
     const { name, value } = e.target
     setUpdatedProject((prev) => ({ ...prev, [name]: value }))
   }
+
+  
 
   return (
     <div className='container-fluid d-flex'>
@@ -229,8 +249,12 @@ const AdminDashboard = () => {
                     <div className='col-md-4 mb-4' key={project._id}>
                       <div className='card'>
                         <div className='card-body'>
-                          <h5 className='card-title text-bold'>{project.name}</h5>
-                          <p className='card-text text-basic'>{project.description}</p>
+                          <h5 className='card-title text-bold'>
+                            {project.name}
+                          </h5>
+                          <p className='card-text text-basic'>
+                            {project.description}
+                          </p>
                           <div className='d-flex'>
                             <Button
                               variant='warning'
@@ -246,13 +270,6 @@ const AdminDashboard = () => {
                               Delete
                             </Button>
                           </div>
-                          {/* <Button
-                            className='mt-2'
-                            variant='info'
-                            onClick={() => handleProjectClick(project)}
-                          >
-                            View More
-                          </Button> */}
                         </div>
                       </div>
                     </div>
@@ -275,6 +292,9 @@ const AdminDashboard = () => {
                         <div className='card-body'>
                           <h5 className='card-title text-bold'>{user.name}</h5>
                           <p className='card-text text-basic'>{user.email}</p>
+                          <p className='card-text text-basic'>
+                            Tasks: {user.taskCount || 0}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -284,50 +304,52 @@ const AdminDashboard = () => {
             </div>
           )}
           {selectedTab === 'profile' && (
-            <div>
-              <h2>Profile</h2>
-              <p>Username: {username}</p>
+            <div className='card'>
+              <div className='card-body'>
+                <h5 className='card-title'>Profile</h5>
+                <p className='card-text'>Username: {username}</p>
+              </div>
+            </div>
+          )}
+          {isUpdating && selectedTab === 'projects' && (
+            <div className='card mt-4'>
+              <div className='card-body'>
+                <h5 className='card-title'>Update Project</h5>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    handleUpdateProject()
+                  }}
+                >
+                  <div className='mb-3'>
+                    <input
+                      type='text'
+                      className='form-control'
+                      placeholder='Project Title'
+                      name='name'
+                      value={updatedProject.name}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className='mb-3'>
+                    <textarea
+                      className='form-control'
+                      placeholder='Project Description'
+                      name='description'
+                      value={updatedProject.description}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <Button type='submit' variant='primary'>
+                    Update Project
+                  </Button>
+                </form>
+              </div>
             </div>
           )}
         </div>
-        {isUpdating && (
-          <div className='card mt-4'>
-            <div className='card-body'>
-              <h5 className='card-title'>Update Project</h5>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  handleUpdateProject()
-                }}
-              >
-                <div className='mb-3'>
-                  <input
-                    type='text'
-                    name='name'
-                    className='form-control'
-                    placeholder='Project Title'
-                    value={updatedProject.name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className='mb-3'>
-                  <textarea
-                    name='description'
-                    className='form-control'
-                    placeholder='Project Description'
-                    value={updatedProject.description}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <Button type='submit' variant='primary'>
-                  Update Project
-                </Button>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
