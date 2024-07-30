@@ -28,15 +28,15 @@ mongoose
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.log(err))
 
-// User Schema
-const userSchema = new mongoose.Schema({
+// Member Schema
+const memberSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['member'], required: true },
+  role: { type: String, enum: ['member'], default: 'member' },
 })
 
-const User = mongoose.model('User', userSchema)
+const Member = mongoose.model('Member', memberSchema)
 
 // Admin Schema
 const adminSchema = new mongoose.Schema({
@@ -66,7 +66,7 @@ const taskSchema = new mongoose.Schema({
     default: 'pending',
   },
   projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
-  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Member' },
 })
 
 const Task = mongoose.model('Task', taskSchema)
@@ -75,37 +75,10 @@ const Task = mongoose.model('Task', taskSchema)
 const fileSchema = new mongoose.Schema({
   name: { type: String, required: true },
   path: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now }
-});
+  createdAt: { type: Date, default: Date.now },
+})
 
-const File = mongoose.model('File', fileSchema);
-
-// Middleware for verifying JWT tokens
-const authenticateJWT = (req, res, next) => {
-  const token =
-    req.headers.authorization && req.headers.authorization.split(' ')[1]
-
-  if (token) {
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-      if (err) {
-        return res.sendStatus(403)
-      }
-      req.user = user
-      next()
-    })
-  } else {
-    res.sendStatus(401)
-  }
-}
-
-// Middleware for authorizing admin roles
-const authorizeAdmin = async (req, res, next) => {
-  const admin = await Admin.findById(req.user.id)
-  if (!admin) {
-    return res.sendStatus(403)
-  }
-  next()
-}
+const File = mongoose.model('File', fileSchema)
 
 // Hardcoded Admins
 const hardcodedAdmins = [
@@ -152,20 +125,19 @@ app.post(
     const { name, email, password } = req.body
 
     try {
-      let user = await User.findOne({ email })
-      if (user) {
-        return res.status(400).json({ message: 'User already exists' })
+      let member = await Member.findOne({ email })
+      if (member) {
+        return res.status(400).json({ message: 'Member already exists' })
       }
 
-      user = new User({
+      member = new Member({
         name,
         email,
         password: await bcrypt.hash(password, 10),
-        role: 'member',
       })
-      await user.save()
+      await member.save()
 
-      res.status(201).json({ message: 'User registered successfully' })
+      res.status(201).json({ message: 'Member registered successfully' })
     } catch (err) {
       res.status(500).json({ message: 'Server error' })
     }
@@ -188,19 +160,19 @@ app.post(
     const { email, password } = req.body
 
     try {
-      const user =
-        (await User.findOne({ email })) || (await Admin.findOne({ email }))
-      if (!user) {
+      const member =
+        (await Member.findOne({ email })) || (await Admin.findOne({ email }))
+      if (!member) {
         return res.status(400).json({ message: 'Invalid credentials' })
       }
 
-      const isMatch = await bcrypt.compare(password, user.password)
+      const isMatch = await bcrypt.compare(password, member.password)
       if (!isMatch) {
         return res.status(400).json({ message: 'Invalid credentials' })
       }
 
       const token = jwt.sign(
-        { id: user._id, role: user.role || 'admin' },
+        { id: member._id, role: member.role || 'admin' },
         JWT_SECRET,
         {
           expiresIn: '1h',
@@ -214,12 +186,10 @@ app.post(
   }
 )
 
-
-
 // Fetch All Members (Admin Only)
-app.get('/members', authenticateJWT, authorizeAdmin, async (req, res) => {
+app.get('/members', async (req, res) => {
   try {
-    const members = await User.find({ role: 'member' })
+    const members = await Member.find()
     res.json(members)
   } catch (err) {
     res.status(500).json({ message: 'Server error' })
@@ -227,10 +197,10 @@ app.get('/members', authenticateJWT, authorizeAdmin, async (req, res) => {
 })
 
 // CRUD for Projects
-app.post('/projects', authenticateJWT, authorizeAdmin, async (req, res) => {
+app.post('/projects', async (req, res) => {
   try {
-    const { name, description } = req.body
-    const project = new Project({ name, description, createdBy: req.user.id })
+    const { name, description, createdBy } = req.body
+    const project = new Project({ name, description, createdBy })
     await project.save()
     res.status(201).json(project)
   } catch (err) {
@@ -238,16 +208,16 @@ app.post('/projects', authenticateJWT, authorizeAdmin, async (req, res) => {
   }
 })
 
-app.get('/projects', authenticateJWT, async (req, res) => {
+app.get('/projects', async (req, res) => {
   try {
-    const projects = await Project.find({ createdBy: req.user.id })
+    const projects = await Project.find()
     res.json(projects)
   } catch (err) {
     res.status(500).json({ message: 'Server error' })
   }
 })
 
-app.put('/projects/:id', authenticateJWT, authorizeAdmin, async (req, res) => {
+app.put('/projects/:id', async (req, res) => {
   try {
     const { name, description } = req.body
     const project = await Project.findByIdAndUpdate(
@@ -261,22 +231,17 @@ app.put('/projects/:id', authenticateJWT, authorizeAdmin, async (req, res) => {
   }
 })
 
-app.delete(
-  '/projects/:id',
-  authenticateJWT,
-  authorizeAdmin,
-  async (req, res) => {
-    try {
-      await Project.findByIdAndDelete(req.params.id)
-      res.json({ message: 'Project deleted' })
-    } catch (err) {
-      res.status(500).json({ message: 'Server error' })
-    }
+app.delete('/projects/:id', async (req, res) => {
+  try {
+    await Project.findByIdAndDelete(req.params.id)
+    res.json({ message: 'Project deleted' })
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' })
   }
-)
+})
 
 // CRUD for Tasks
-app.post('/tasks', authenticateJWT, authorizeAdmin, async (req, res) => {
+app.post('/tasks', async (req, res) => {
   try {
     const { title, description, status, projectId, assignedTo } = req.body
     const task = new Task({ title, description, status, projectId, assignedTo })
@@ -287,7 +252,7 @@ app.post('/tasks', authenticateJWT, authorizeAdmin, async (req, res) => {
   }
 })
 
-app.get('/tasks', authenticateJWT, async (req, res) => {
+app.get('/tasks', async (req, res) => {
   try {
     const tasks = await Task.find().populate('projectId').populate('assignedTo')
     res.json(tasks)
@@ -296,7 +261,7 @@ app.get('/tasks', authenticateJWT, async (req, res) => {
   }
 })
 
-app.put('/tasks/:id', authenticateJWT, authorizeAdmin, async (req, res) => {
+app.put('/tasks/:id', async (req, res) => {
   try {
     const { title, description, status, projectId, assignedTo } = req.body
     const task = await Task.findByIdAndUpdate(
@@ -310,7 +275,7 @@ app.put('/tasks/:id', authenticateJWT, authorizeAdmin, async (req, res) => {
   }
 })
 
-app.delete('/tasks/:id', authenticateJWT, authorizeAdmin, async (req, res) => {
+app.delete('/tasks/:id', async (req, res) => {
   try {
     await Task.findByIdAndDelete(req.params.id)
     res.json({ message: 'Task deleted' })
@@ -319,106 +284,30 @@ app.delete('/tasks/:id', authenticateJWT, authorizeAdmin, async (req, res) => {
   }
 })
 
-// File upload endpoint (Admin Only)
-// File upload endpoint (Admin Only)
-app.post('/api/upload', authenticateJWT, authorizeAdmin, (req, res) => {
+// File Upload
+app.post('/upload', (req, res) => {
   const form = new formidable.IncomingForm()
-
-  // Set upload directory
   form.uploadDir = path.join(__dirname, 'uploads')
-  form.keepExtensions = true // Keep file extensions
+  form.keepExtensions = true
 
-  // Parse form data
   form.parse(req, async (err, fields, files) => {
     if (err) {
-      console.error('Form parse error:', err)
-      return res.status(500).json({ error: err.message })
+      return res.status(500).json({ message: 'File upload error' })
     }
 
-    console.log('Fields:', fields)
-    console.log('Files:', files)
-
-    // Check if file is present and is an array
-    const fileArray = files.file
-    if (!Array.isArray(fileArray) || fileArray.length === 0) {
-      return res.status(400).json({ message: 'No file uploaded' })
-    }
-
-    // Process the first file (adjust if multiple files are needed)
-    const file = fileArray[0]
-    console.log('File details:', file)
-
-    // Ensure the file has a filepath
-    const oldPath = file.filepath
-    if (!oldPath) {
-      console.error('File path is undefined')
-      return res.status(400).json({ message: 'File path is undefined' })
-    }
-
-    const newFilename = file.originalFilename || 'uploaded_file'
-    const newPath = path.join(form.uploadDir, newFilename)
-
-    // Create uploads directory if it doesn't exist
-    if (!fs.existsSync(form.uploadDir)) {
-      fs.mkdirSync(form.uploadDir, { recursive: true })
-    }
-
-    // Move the file to the new path
-    fs.rename(oldPath, newPath, async (err) => {
-      if (err) {
-        console.error('File rename error:', err)
-        return res.status(500).json({ error: err.message })
-      }
-
-      // Save file details in MongoDB
-      const fileDetails = new File({
-        name: newFilename,
-        path: newPath,
-      })
-
-      try {
-        await fileDetails.save()
-        res.status(201).json({ message: 'File uploaded successfully' })
-      } catch (err) {
-        console.error('Database save error:', err)
-        res.status(500).json({ error: err.message })
-      }
+    const file = files.file[0]
+    const newFile = new File({
+      name: file.originalFilename,
+      path: file.filepath,
     })
+
+    try {
+      await newFile.save()
+      res.json(newFile)
+    } catch (err) {
+      res.status(500).json({ message: 'Server error' })
+    }
   })
 })
 
-
-
-
-
-// File Schema
-
-// Search API for projects and tasks
-app.get('/search', authenticateJWT, async (req, res) => {
-  try {
-    const { q } = req.query
-    const projects = await Project.find({
-      $or: [
-        { name: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } },
-      ],
-      createdBy: req.user.id,
-    })
-
-    const tasks = await Task.find({
-      $or: [
-        { title: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } },
-      ],
-    })
-
-    res.json({ projects, tasks })
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
-
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

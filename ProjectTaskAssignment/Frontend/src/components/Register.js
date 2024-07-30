@@ -1,7 +1,9 @@
+// Register.js
 import React, { useState } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-
+import Button from '../components/Button' // Import the Button component
+import './Register.css'
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -28,35 +30,48 @@ const Register = () => {
   }
 
   return (
-    <div className='register-container'>
-      <form className='register-form' onSubmit={onSubmit}>
-        <h2>Register</h2>
-        <input
-          type='text'
-          name='name'
-          value={name}
-          onChange={onChange}
-          placeholder='Name'
-          required
-        />
-        <input
-          type='email'
-          name='email'
-          value={email}
-          onChange={onChange}
-          placeholder='Email'
-          required
-        />
-        <input
-          type='password'
-          name='password'
-          value={password}
-          onChange={onChange}
-          placeholder='Password'
-          required
-        />
-        <button type='submit'>Register</button>
-      </form>
+    <div className='container d-flex justify-content-center align-items-center vh-100'>
+      <div className='card p-4' style={{ width: '100%', maxWidth: '400px' }}>
+        <h2 className='text-center mb-4'>Register</h2>
+        <form onSubmit={onSubmit}>
+          <div className='form-group p-2'>
+            <input
+              type='text'
+              name='name'
+              className='form-control'
+              value={name}
+              onChange={onChange}
+              placeholder='Name'
+              required
+            />
+          </div>
+          <div className='form-group p-2'>
+            <input
+              type='email'
+              name='email'
+              className='form-control'
+              value={email}
+              onChange={onChange}
+              placeholder='Email'
+              required
+            />
+          </div>
+          <div className='form-group p-2'>
+            <input
+              type='password'
+              name='password'
+              className='form-control'
+              value={password}
+              onChange={onChange}
+              placeholder='Password'
+              required
+            />
+          </div>
+          <Button type='submit' variant='success' className='w-100'>
+            Register
+          </Button>
+        </form>
+      </div>
     </div>
   )
 }

@@ -1,110 +1,48 @@
-.admin-dashboard {
-  display: flex;
+/* AdminDashboard.css */
+.bg-some{
+  background-color:#e5e5e5;
+}
+.sidebar {
+  width: 250px;
+  min-height: 100vh;
 }
 
-.sidenav {
-  width: 200px;
-  background-color: #f8f9fa;
-  padding: 20px;
+.text-bold{
+  color: #000;
+}
+.text-basic{
+  color:#343a40 ;
 }
 
-.sidenav ul {
-  list-style-type: none;
-  padding: 0;
+.main-content {
+  flex-grow: 1;
 }
 
-.sidenav ul li {
-  margin: 10px 0;
-  cursor: pointer;
+.card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
 }
 
-.sidenav ul li:hover {
-  background-color: #e9ecef;
-  border-radius: 4px;
-  padding: 5px;
+.card-body {
+  padding: 1.25rem;
 }
 
-.content {
-  flex: 1;
-  padding: 20px;
+.card-title {
+  margin-bottom: 0.75rem;
 }
 
-.projects,
-.create-project {
-  margin-bottom: 20px;
+.form-control {
+  border-radius: 0.375rem;
 }
 
-.projects ul {
-  list-style-type: none;
-  padding: 0;
+.form-control:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
-.projects ul li {
-  background-color: #f8f9fa;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 4px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+button.ms-2 {
+  margin-left: 0.5rem;
 }
 
-.projects ul li h3 {
-  margin: 0;
-}
-
-.projects ul li p {
-  margin: 0;
-}
-
-.projects ul li button {
-  margin-left: 10px;
-}
-
-.create-project form {
-  display: flex;
-  flex-direction: column;
-}
-
-.create-project form input,
-.create-project form textarea {
-  margin-bottom: 10px;
-  padding: 10px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-}
-
-.create-project form button {
-  padding: 10px;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.create-project form button:hover {
-  background-color: #0056b3;
-}
-
-.search-bar {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.search-bar input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-}
-
-.search-bar .search-icon {
-  margin-left: 10px;
-  cursor: pointer;
-}
-
-.admin-info {
-  margin-bottom: 20px;
+button.mt-2 {
+  margin-top: 0.5rem;
 }

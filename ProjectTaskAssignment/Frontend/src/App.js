@@ -9,6 +9,7 @@ import store from './redux/store'
 import './style.css'
 import Home from './components/Home'
 
+
 const App = () => {
   return (
     <Provider store={store}>
@@ -19,6 +20,7 @@ const App = () => {
           <Route path='/login' element={<Login />} />
           <Route path='/dashboard' element={<Dashboard />} />
           <Route path='/admin' element={<Admin />} />
+          
         </Routes>
       </Router>
     </Provider>

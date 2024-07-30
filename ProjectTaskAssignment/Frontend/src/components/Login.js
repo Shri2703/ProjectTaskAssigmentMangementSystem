@@ -5,6 +5,8 @@ import { useDispatch } from 'react-redux'
 import { jwtDecode as jwtDecode} from 'jwt-decode'
 import { useNavigate } from 'react-router-dom'
 import { setToken } from '../redux/actions/authActions'
+import Button from '../components/Button' // Import the Button component
+import './Login.css'
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -40,23 +42,38 @@ const Login = () => {
   }
 
   return (
-    <form onSubmit={onSubmit}>
-      <input
-        type='email'
-        name='email'
-        value={email}
-        onChange={onChange}
-        placeholder='Email'
-      />
-      <input
-        type='password'
-        name='password'
-        value={password}
-        onChange={onChange}
-        placeholder='Password'
-      />
-      <button type='submit'>Login</button>
-    </form>
+    <div className='container d-flex justify-content-center align-items-center vh-100'>
+      <div className='card p-4' style={{ width: '100%', maxWidth: '400px' }}>
+        <h2 className='text-center mb-4'>Login</h2>
+        <form onSubmit={onSubmit}>
+          <div className='form-group p-2'>
+            <input
+              type='email'
+              name='email'
+              className='form-control'
+              value={email}
+              onChange={onChange}
+              placeholder='Email'
+              required
+            />
+          </div>
+          <div className='form-group p-2'>
+            <input
+              type='password'
+              name='password'
+              className='form-control'
+              value={password}
+              onChange={onChange}
+              placeholder='Password'
+              required
+            />
+          </div>
+          <Button type='submit' variant='success' className='w-100'>
+            Login
+          </Button>
+        </form>
+      </div>
+    </div>
   )
 }
 

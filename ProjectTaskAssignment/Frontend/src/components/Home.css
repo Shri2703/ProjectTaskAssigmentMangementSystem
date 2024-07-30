@@ -1,67 +1,16 @@
+/* Home.css */
 .home-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
   background-color: var(--background-color);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .home-content {
   text-align: center;
-  background: white;
-  padding: 2em;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.home-content h1 {
-  color: var(--primary-color);
-  margin-bottom: 1em;
-}
-
-.home-content h6 {
-  color: var(--font-color-basic);
-  margin: 0.5em 0;
-}
-
-.home-content .button-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1em;
-}
-
-.home-content .button-container a {
-  flex: 1;
-  text-align: center;
-  margin: 0 0.5em;
-}
-
-.home-content .button-container a:first-child {
-  margin-left: 0;
-}
-
-.home-content .button-container a:last-child {
-  margin-right: 0;
-}
-
-
-
-
-.home-content button {
-  width: 100%;
-  padding: 10px;
-  background-color: var(--primary-color);
-  border: none;
-  color: white;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.3s;
-}
-
-.home-content button:hover {
-  background-color: #fff;
-  color: var(--primary-color);
-  border: 2px solid var(--primary-color);
-  border-radius: 9px;
+.button-container {
+  margin-top: 20px;
 }
