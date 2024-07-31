@@ -1,11 +1,10 @@
-// Login.js
 import React, { useState } from 'react'
 import axios from 'axios'
 import { useDispatch } from 'react-redux'
-import { jwtDecode as jwtDecode} from 'jwt-decode'
+import {jwtDecode} from 'jwt-decode'
 import { useNavigate } from 'react-router-dom'
 import { setToken } from '../redux/actions/authActions'
-import Button from '../components/Button' // Import the Button component
+import Button from '../components/Button'
 import './Login.css'
 
 const Login = () => {
@@ -31,6 +30,13 @@ const Login = () => {
       const { token } = response.data
       dispatch(setToken(token))
       const decodedToken = jwtDecode(token)
+
+      // Store the decoded token in localStorage as an array of objects
+      localStorage.setItem(
+        'decodedTokens',
+        JSON.stringify([{ token, ...decodedToken }])
+      )
+
       if (decodedToken.role === 'admin') {
         navigate('/admin')
       } else {

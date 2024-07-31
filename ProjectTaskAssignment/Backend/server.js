@@ -213,6 +213,44 @@ app.get('/members', async (req, res) => {
   }
 })
 
+app.get('/members/:id', async (req, res) => {
+  try {
+    const memberId = req.params.id
+    const member = await Member.findById(memberId) // Find member by ID
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found' })
+    }
+    res.json(member) // Return the full member object
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error })
+  }
+})
+app.put('/members/:id', async (req, res) => {
+  try {
+    const { name, email, password } = req.body
+    const updatedFields = { name, email }
+
+    if (password) {
+      const salt = await bcrypt.genSalt(10)
+      updatedFields.password = await bcrypt.hash(password, salt)
+    }
+
+    const member = await Member.findByIdAndUpdate(
+      req.params.id,
+      updatedFields,
+      {
+        new: true,
+      }
+    ).select('-password')
+
+    if (!member) return res.status(404).json({ message: 'Member not found' })
+
+    res.json(member)
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // CRUD for Projects
 app.post('/projects', async (req, res) => {
   try {
@@ -404,6 +442,7 @@ app.put('/profile', authenticateJWT, async (req, res) => {
     res.status(500).json({ message: 'Server error' })
   }
 })
+
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

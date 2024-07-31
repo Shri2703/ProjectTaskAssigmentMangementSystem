@@ -1,5 +1,10 @@
 // src/redux/reducers/authReducer.js
-import { SET_TOKEN, SET_CURRENT_USER, LOGOUT_USER } from '../types'
+import {
+  SET_TOKEN,
+  SET_CURRENT_USER,
+  LOGOUT_USER,
+  UPDATE_USER_PROFILE,
+} from '../types'
 
 const initialState = {
   token: null,
@@ -17,6 +22,14 @@ const authReducer = (state = initialState, action) => {
       return {
         ...state,
         user: action.payload,
+      }
+    case UPDATE_USER_PROFILE:
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          ...action.payload,
+        },
       }
     case LOGOUT_USER:
       return {

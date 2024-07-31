@@ -1,5 +1,10 @@
 // src/redux/actions/authActions.js
-import { SET_TOKEN, SET_CURRENT_USER, LOGOUT_USER } from '../types'
+import {
+  SET_TOKEN,
+  SET_CURRENT_USER,
+  LOGOUT_USER,
+  UPDATE_USER_PROFILE,
+} from '../types'
 
 // Action to set token
 export const setToken = (token) => ({
@@ -16,4 +21,10 @@ export const setCurrentUser = (user) => ({
 // Action to handle logout
 export const logoutUser = () => ({
   type: LOGOUT_USER,
+})
+
+// Action to update user profile
+export const updateUserProfile = (user) => ({
+  type: UPDATE_USER_PROFILE,
+  payload: user,
 })

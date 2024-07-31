@@ -6,16 +6,19 @@ import {
   updateProject,
   deleteProject,
   getUsersWithCounts,
-  
 } from '../api/admin'
-import { FaBell, FaSearch } from 'react-icons/fa'
+import { logoutUser } from '../redux/actions/authActions'
+import { useNavigate } from 'react-router-dom'
 
+
+import { FaBell, FaSearch } from 'react-icons/fa'
+import { useDispatch } from 'react-redux'
 import Button from '../components/Button'
 import './AdminDashboard.css'
 import Tasks from './Task' // Adjust the path as necessary
 import axios from 'axios'
 import { useSelector } from 'react-redux'
-const API_URL = 'http://localhost:5000'; 
+const API_URL = 'http://localhost:5000'
 const AdminDashboard = () => {
   const [projects, setProjects] = useState([])
   const [users, setUsers] = useState([])
@@ -32,11 +35,10 @@ const AdminDashboard = () => {
     name: '',
     description: '',
   })
-  
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  
+
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
@@ -44,64 +46,64 @@ const AdminDashboard = () => {
   })
 
   const token = useSelector((state) => state.auth.token)
+  const user = useSelector((state) => state.auth.user)
 
-   const fetchProfileData = async () => {
-     try {
-       if (!token) {
-         console.error('No authentication token found')
-         return
-       }
-       const response = await axios.get(`${API_URL}/profile`, {
-         headers: {
-           Authorization: `Bearer ${token}`, // Include the token in the request headers
-         },
-       })
-       const profile = response.data
-       setProfileData(profile) // Update state with fetched profile data
-     } catch (error) {
-       console.error('Error fetching profile data:', error)
-     }
-   }
+ const dispatch = useDispatch()
+ const navigate = useNavigate()
+  const fetchProfileData = async () => {
+    try {
+      if (!token) {
+        console.error('No authentication token found')
+        return
+      }
+      const response = await axios.get(`${API_URL}/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Include the token in the request headers
+        },
+      })
+      const profile = response.data
+      setProfileData(profile) // Update state with fetched profile data
+    } catch (error) {
+      console.error('Error fetching profile data:', error)
+    }
+  }
 
-   useEffect(() => {
-     fetchProfileData()
-   }, [token]) // Re-fetch profile data when token changes
+  useEffect(() => {
+    fetchProfileData()
+  }, [token]) // Re-fetch profile data when token changes
 
-   const handleProfileUpdate = async () => {
-     try {
-       if (!token) {
-         console.error('No authentication token found')
-         return
-       }
-       const response = await axios.put(`${API_URL}/profile`, profileData, {
-         headers: {
-           Authorization: `Bearer ${token}`, // Include the token in the request headers
-         },
-       })
-       const updatedProfile = response.data
-       setProfileData(updatedProfile) // Update state with new data
-       alert('Profile updated successfully!')
-     } catch (error) {
-       console.error('Error updating profile:', error)
-     }
-   }
+  const handleProfileUpdate = async () => {
+    try {
+      if (!token) {
+        console.error('No authentication token found')
+        return
+      }
+      const response = await axios.put(`${API_URL}/profile`, profileData, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Include the token in the request headers
+        },
+      })
+      const updatedProfile = response.data
+      setProfileData(updatedProfile) // Update state with new data
+      alert('Profile updated successfully!')
+    } catch (error) {
+      console.error('Error updating profile:', error)
+    }
+  }
 
+  useEffect(() => {
+    const fetchUsersWithCounts = async () => {
+      try {
+        const data = await getUsersWithCounts()
+        console.log('Users with counts data:', data)
+        setUsers(data) // Update state with fetched data
+      } catch (error) {
+        console.error('Error fetching users with counts:', error)
+      }
+    }
 
-  
-
- useEffect(() => {
-   const fetchUsersWithCounts = async () => {
-     try {
-       const data = await getUsersWithCounts()
-       console.log('Users with counts data:', data)
-       setUsers(data) // Update state with fetched data
-     } catch (error) {
-       console.error('Error fetching users with counts:', error)
-     }
-   }
-
-   fetchUsersWithCounts()
- }, [])
+    fetchUsersWithCounts()
+  }, [])
 
   useEffect(() => {
     const fetchProjectsAndUsers = async () => {
@@ -186,10 +188,15 @@ const AdminDashboard = () => {
     const { name, value } = e.target
     setUpdatedProject((prev) => ({ ...prev, [name]: value }))
   }
-
-   
-
-
+  
+  const handleLogout = () => {
+    dispatch(logoutUser())
+    // Clear the localStorage
+    localStorage.removeItem('decodedTokens')
+    // Navigate to homepage
+    navigate('/')
+  }  
+  
 
   return (
     <div className='container-fluid p-0 d-flex'>
@@ -219,14 +226,7 @@ const AdminDashboard = () => {
           >
             <a className='nav-link '>Users</a>
           </li>
-          <li
-            className={`nav-item mt-2 ${
-              selectedTab === 'signout' ? 'active' : ''
-            }`}
-            onClick={() => handleTabClick('Signout')}
-          >
-            <a className='nav-link '>Signout</a>
-          </li>
+
           {/* <li
             className={`nav-item mt-2 ${
               selectedTab === 'profile' ? 'active' : ''
@@ -236,6 +236,9 @@ const AdminDashboard = () => {
             <a className='nav-link text-dark'>Profile</a>
           </li> */}
         </ul>
+        <a className='nav-link' onClick={handleLogout}>
+          Sign Out
+        </a>
       </div>
       <div className='main-content flex-fill p-4 bg-some'>
         <div className='search-header'>
@@ -359,8 +362,12 @@ const AdminDashboard = () => {
                     <div className='col-md-4 mb-4' key={user._id}>
                       <div className='card'>
                         <div className='card-body'>
-                          <h5 className='card-title text-basic'>Name:{user.name}</h5>
-                          <p className='card-text text-basic'>E-Mail: {user.email}</p>
+                          <h5 className='card-title text-basic'>
+                            Name:{user.name}
+                          </h5>
+                          <p className='card-text text-basic'>
+                            E-Mail: {user.email}
+                          </p>
                           <p className='card-text text-basic'>
                             Tasks: {user.taskCount || 0}
                           </p>
