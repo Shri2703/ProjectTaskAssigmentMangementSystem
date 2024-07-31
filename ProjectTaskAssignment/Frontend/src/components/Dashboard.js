@@ -4,6 +4,12 @@ import axios from 'axios'
 import { logoutUser } from '../redux/actions/authActions'
 import { FaBell, FaSearch } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
+import {
+  getAllProjects,
+  getAssignedProjects,
+  getAssignedTasks,
+  updateTaskStatus,
+} from '../api/project'
 import './Dashboard.css' // Ensure this path is correct
 
 const Dashboard = () => {
@@ -11,48 +17,60 @@ const Dashboard = () => {
   const [error, setError] = useState(null)
   const [activeSection, setActiveSection] = useState('dashboard')
   const [editMode, setEditMode] = useState(false)
+  const [allProjects, setAllProjects] = useState([])
+  const [assignedProjects, setAssignedProjects] = useState([])
+  const [assignedTasks, setAssignedTasks] = useState([])
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
   })
+  const [editingTaskId, setEditingTaskId] = useState(null)
+  const [taskStatus, setTaskStatus] = useState('')
+
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Get the token from localStorage
-    const storedTokens = JSON.parse(localStorage.getItem('decodedTokens'))
-    const token = storedTokens?.[0]?.token
+    const fetchData = async () => {
+      try {
+        const storedTokens = JSON.parse(localStorage.getItem('decodedTokens'))
+        const token = storedTokens?.[0]?.token
 
-    if (token) {
-      // Decode the token to get the user ID
-      const decodedToken = storedTokens[0]
-      const userId = decodedToken.id
+        if (token) {
+          const decodedToken = storedTokens[0]
+          const userId = decodedToken.id
 
-      // Fetch user information by ID
-      const fetchUserInfo = async () => {
-        try {
-          const response = await axios.get(
+          // Fetch user information
+          const userResponse = await axios.get(
             `http://localhost:5000/members/${userId}`
           )
-          setUserInfo(response.data)
-        } catch (error) {
-          setError('Failed to fetch user information')
-          console.error(error)
-        }
-      }
+          setUserInfo(userResponse.data)
 
-      fetchUserInfo()
-    } else {
-      setError('No token found')
+          // Fetch all projects and assigned projects
+          const allProjectsData = await getAllProjects()
+          setAllProjects(allProjectsData)
+          const assignedProjectsData = await getAssignedProjects(userId)
+          setAssignedProjects(assignedProjectsData)
+
+          // Fetch assigned tasks
+          const assignedTasksData = await getAssignedTasks(userId)
+          setAssignedTasks(assignedTasksData)
+        } else {
+          setError('No token found')
+        }
+      } catch (error) {
+        setError('Failed to fetch data')
+        console.error(error)
+      }
     }
+
+    fetchData()
   }, [])
 
   const handleLogout = () => {
     dispatch(logoutUser())
-    // Clear the localStorage
     localStorage.removeItem('decodedTokens')
-    // Navigate to homepage
     navigate('/')
   }
 
@@ -82,11 +100,31 @@ const Dashboard = () => {
       )
       setUserInfo(response.data)
       setEditMode(false)
-      // Update the name in localStorage
       storedTokens[0].name = response.data.name
       localStorage.setItem('decodedTokens', JSON.stringify(storedTokens))
     } catch (error) {
       setError('Failed to update profile')
+      console.error(error)
+    }
+  }
+
+  const handleStatusChange = (taskId, status) => {
+    setEditingTaskId(taskId)
+    setTaskStatus(status)
+  }
+
+  const handleStatusUpdate = async () => {
+    try {
+      const updatedTask = await updateTaskStatus(editingTaskId, taskStatus)
+      setAssignedTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task._id === editingTaskId ? updatedTask : task
+        )
+      )
+      setEditingTaskId(null)
+      setTaskStatus('')
+    } catch (error) {
+      setError('Failed to update task status')
       console.error(error)
     }
   }
@@ -134,8 +172,92 @@ const Dashboard = () => {
         </div>
         <div className='content'>
           {activeSection === 'dashboard' && <h1>Welcome to the Dashboard</h1>}
-          {activeSection === 'projects' && <h1>This is the Project Section</h1>}
-          {activeSection === 'tasks' && <h1>This is the Task Section</h1>}
+          {activeSection === 'projects' && (
+            <div>
+              <h1>Projects</h1>
+              <h2>All Projects</h2>
+              <div className='row'>
+                {allProjects.map((project) => (
+                  <div className='col-md-4' key={project._id}>
+                    <div className='card mb-4'>
+                      <div className='card-body'>
+                        <h5 className='card-title'>{project.title}</h5>
+                        <p className='card-text'>{project.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <h2>Projects Assigned to You</h2>
+              <div className='row'>
+                {assignedProjects.map((project) => (
+                  <div className='col-md-4' key={project._id}>
+                    <div className='card mb-4'>
+                      <div className='card-body'>
+                        <h5 className='card-title'>{project.title}</h5>
+                        <p className='card-text'>{project.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {activeSection === 'tasks' && (
+            <div>
+              <h1>Tasks</h1>
+              <div className='row'>
+                {assignedTasks.map((task) => (
+                  <div
+                    className={`col-md-4 mb-4 ${
+                      task.status === 'completed' ? 'bg-success text-white' : ''
+                    }`}
+                    key={task._id}
+                  >
+                    <div className='card m-4'>
+                      <div className='card-body'>
+                        <h5 className='card-title'>{task.title}</h5>
+                        <p className='card-text'>{task.description}</p>
+                        <p className='card-text'>Status: {task.status}</p>
+                        {editingTaskId === task._id ? (
+                          <div>
+                            <div className='form-group mb-3'>
+                              <label htmlFor='status'>Status</label>
+                              <select
+                                id='status'
+                                className='form-control'
+                                value={taskStatus}
+                                onChange={(e) => setTaskStatus(e.target.value)}
+                              >
+                                <option value='pending'>Pending</option>
+                                <option value='in-progress'>In Progress</option>
+                                <option value='completed'>Completed</option>
+                              </select>
+                            </div>
+                            <button
+                              className='btn btn-success'
+                              onClick={handleStatusUpdate}
+                            >
+                              Update Status
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className='btn btn-primary'
+                            onClick={() =>
+                              handleStatusChange(task._id, task.status)
+                            }
+                          >
+                            Update Status
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {activeSection === 'profile' && (
             <div>
               <h1>Profile Section</h1>
@@ -155,40 +277,37 @@ const Dashboard = () => {
                         <label className='form-label'>Name</label>
                         <input
                           type='text'
-                          name='name'
                           className='form-control'
+                          name='name'
                           value={formData.name}
                           onChange={handleChange}
-                          placeholder='Name'
                         />
                       </div>
                       <div className='mb-3'>
                         <label className='form-label'>Email</label>
                         <input
                           type='email'
-                          name='email'
                           className='form-control'
+                          name='email'
                           value={formData.email}
                           onChange={handleChange}
-                          placeholder='Email'
                         />
                       </div>
                       <div className='mb-3'>
                         <label className='form-label'>Password</label>
                         <input
                           type='password'
-                          name='password'
                           className='form-control'
+                          name='password'
                           value={formData.password}
                           onChange={handleChange}
-                          placeholder='Password'
                         />
                       </div>
                       <button
                         className='btn btn-success'
                         onClick={handleUpdateProfile}
                       >
-                        Update Profile
+                        Save Changes
                       </button>
                     </div>
                   )}
@@ -196,7 +315,6 @@ const Dashboard = () => {
               )}
             </div>
           )}
-          {error && <p className='text-danger'>{error}</p>}
         </div>
       </div>
     </div>

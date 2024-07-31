@@ -71,3 +71,4 @@ export const deleteTask = async (taskId) => {
     throw error
   }
 }
+

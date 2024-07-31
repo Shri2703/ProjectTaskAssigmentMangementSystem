@@ -215,14 +215,14 @@ app.get('/members', async (req, res) => {
 
 app.get('/members/:id', async (req, res) => {
   try {
-    const memberId = req.params.id
-    const member = await Member.findById(memberId) // Find member by ID
+    const member = await Member.findById(req.params.id)
     if (!member) {
       return res.status(404).json({ message: 'Member not found' })
     }
-    res.json(member) // Return the full member object
+    res.json(member)
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error })
+    console.error('Error fetching member:', error)
+    res.status(500).json({ message: 'Internal Server Error' })
   }
 })
 app.put('/members/:id', async (req, res) => {
@@ -330,16 +330,17 @@ app.put('/tasks/:id', async (req, res) => {
   }
 })
 
-app.delete('/tasks/:id', async (req, res) => {
-  try {
-    await Task.findByIdAndDelete(req.params.id)
-    res.json({ message: 'Task deleted' })
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
 
-// File Upload
+app.delete('/tasks/:id', async (req, res) => {
+    try {
+      await Task.findByIdAndDelete(req.params.id)
+      res.json({ message: 'Task deleted' })
+    } catch (err) {
+      res.status(500).json({ message: 'Server error' })
+    }
+  })
+
+  // File Upload
 app.post('/upload', (req, res) => {
   const form = new formidable.IncomingForm()
   form.uploadDir = path.join(__dirname, 'uploads')
@@ -392,8 +393,107 @@ app.get('/api/usersWithCounts', async (req, res) => {
 });
 
 
+// Fetch all projects and the projects assigned to a specific member
+app.get('/projectsForMember/:memberId', async (req, res) => {
+  try {
+    const memberId = req.params.memberId;
+
+    // Step 1: Find all tasks assigned to the specific member
+    const tasks = await Task.find({ assignedTo: memberId }).select('projectId');
+
+    // Step 2: Extract unique project IDs
+    const projectIds = [...new Set(tasks.map(task => task.projectId))];
+
+    // Step 3: Fetch details of these projects
+    const projects = await Project.find({ _id: { $in: projectIds } });
+
+    res.json({
+      allProjects: await Project.find(), // Fetch all projects
+      memberProjects: projects // Fetch projects assigned to the member
+    });
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.get('/projects/assigned/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId
+
+    // Step 1: Find all tasks assigned to the specific user
+    const tasks = await Task.find({ assignedTo: userId }).select('projectId')
+
+    // Step 2: Extract unique project IDs
+    const projectIds = [...new Set(tasks.map((task) => task.projectId))]
+
+    // Step 3: Fetch details of these projects
+    const projects = await Project.find({ _id: { $in: projectIds } })
+
+    res.json(projects)
+  } catch (error) {
+    console.error('Error fetching assigned projects:', error)
+    res.status(500).json({ message: 'Internal Server Error' })
+  }
+})
+app.get('/tasks/assigned/:userId', async (req, res) => {
+  try {
+    const tasks = await Task.find({ assignedTo: req.params.userId })
+    if (!tasks) {
+      return res.status(404).json({ message: 'No tasks found' })
+    }
+    res.json(tasks)
+  } catch (error) {
+    console.error('Error fetching assigned tasks:', error)
+    res.status(500).json({ message: 'Internal Server Error' })
+  }
+})
+
+app.put('/updateStatus/:taskId', async (req, res) => {
+  try {
+    const { taskId } = req.params
+    const { status } = req.body
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      { status },
+      { new: true }
+    )
+
+    if (!updatedTask) {
+      return res.status(404).json({ message: 'Task not found' })
+    }
+
+    res.json(updatedTask)
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
 
 
+// Get users with task counts
+app.get('/api/usersWithCounts', async (req, res) => {
+  try {
+    const users = await Member.find(); // Assuming you're interested in members
 
+    const userData = await Promise.all(
+      users.map(async (user) => {
+        const taskCount = await Task.countDocuments({ assignedTo: user._id });
+
+        return {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          taskCount,
+        };
+      })
+    );
+
+    res.json(userData);
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

@@ -81,17 +81,22 @@ const TaskList = () => {
     <div>
       <div className='d-flex justify-content-between mb-4'>
         <h2 className='text-bold'>Tasks</h2>
-        <Button onClick={handleCreateTask} variant='primary'>
+        <Button
+          variant='primary'
+          onClick={() => {
+            handleCreateTask(!showCreateForm)
+          }}
+        >
           {showCreateForm ? 'Hide Form' : 'Create New Task'}
         </Button>
-        {showCreateForm && (
-          <CreateTask
-            onTaskCreated={() => handleTaskUpdated()}
-            projects={projects}
-            members={users}
-          />
-        )}
       </div>
+      {showCreateForm && (
+        <CreateTask
+          onTaskCreated={() => handleTaskUpdated()}
+          projects={projects}
+          members={users}
+        />
+      )}
 
       {showUpdateForm && (
         <div className='card mt-4'>
