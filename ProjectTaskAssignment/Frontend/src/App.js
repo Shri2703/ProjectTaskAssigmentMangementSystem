@@ -13,18 +13,21 @@ import Home from './components/Home'
 const App = () => {
   return (
     <Provider store={store}>
-      <Router>
-        <Routes>
-          <Route path='/' element={<Home />} />
-          <Route path='/register' element={<Register />} />
-          <Route path='/login' element={<Login />} />
-          <Route path='/dashboard' element={<Dashboard />} />
-          <Route path='/admin' element={<Admin />} />
-          
-        </Routes>
-      </Router>
+      
+        <Router>
+          <Routes>
+            <Route path='/' element={<Home />} />
+            <Route path='/register' element={<Register />} />
+            <Route path='/login' element={<Login />} />
+            <Route path='/dashboard' element={<Dashboard />} />
+            <Route path='/admin' element={<Admin />} />
+            
+          </Routes>
+        </Router>
+      
     </Provider>
   )
 }
 
 export default App
+

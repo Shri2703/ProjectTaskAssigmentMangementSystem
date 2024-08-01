@@ -72,14 +72,17 @@ const taskSchema = new mongoose.Schema({
 const Task = mongoose.model('Task', taskSchema)
 
 // File Schema
-const fileSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  path: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-})
+const fileSchema = new mongoose.Schema(
+  {
+    name: String,
+    path: String,
+    mimetype: String,
+    size: Number,
+  },
+  { timestamps: true }
+)
 
 const File = mongoose.model('File', fileSchema)
-
 
 const authenticateJWT = (req, res, next) => {
   const token =
@@ -283,7 +286,7 @@ app.put('/projects/:id', async (req, res) => {
     )
     res.json(project)
   } catch (err) {
-    res.status (500).json({ message: 'Server error' })
+    res.status(500).json({ message: 'Server error' })
   }
 })
 
@@ -331,92 +334,105 @@ app.put('/tasks/:id', async (req, res) => {
   }
 })
 
-
 app.delete('/tasks/:id', async (req, res) => {
-    try {
-      await Task.findByIdAndDelete(req.params.id)
-      res.json({ message: 'Task deleted' })
-    } catch (err) {
-      res.status(500).json({ message: 'Server error' })
-    }
-  })
+  try {
+    await Task.findByIdAndDelete(req.params.id)
+    res.json({ message: 'Task deleted' })
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
 
-  // File Upload
+// File Upload
+const uploadDir = path.join(__dirname, 'uploads')
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir)
+}
+
 app.post('/upload', (req, res) => {
   const form = new formidable.IncomingForm()
-  form.uploadDir = path.join(__dirname, 'uploads')
+  form.uploadDir = uploadDir
   form.keepExtensions = true
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
-      return res.status(500).json({ message: 'File upload error' })
+      return res.status(500).json({ error: err.message })
     }
 
-    const file = new File({
-      name: files.file.name,
-      path: files.file.path,
+    const file = files.file
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' })
+    }
+
+    const newFile = new File({
+      name: file.originalFilename,
+      path: file.filepath,
+      mimetype: file.mimetype,
+      size: file.size,
     })
 
     try {
-      await file.save()
-      res.status(201).json(file)
-    } catch (err) {
-      res.status(500).json({ message: 'Server error' })
+      await newFile.save() // Using async/await to save the file
+      res
+        .status(200)
+        .json({ message: 'File uploaded successfully', file: newFile })
+    } catch (error) {
+      res.status(500).json({ error: error.message })
     }
   })
 })
+
 
 // New Endpoint to Fetch Users with Project and Task Counts
 // Get users with project and task counts
 // Get users with task counts
 app.get('/api/usersWithCounts', async (req, res) => {
   try {
-    const users = await Member.find(); // Assuming you're interested in members
+    const users = await Member.find() // Assuming you're interested in members
 
     const userData = await Promise.all(
       users.map(async (user) => {
-        const taskCount = await Task.countDocuments({ assignedTo: user._id });
+        const taskCount = await Task.countDocuments({ assignedTo: user._id })
 
         return {
           _id: user._id,
           name: user.name,
           email: user.email,
           taskCount,
-        };
+        }
       })
-    );
+    )
 
-    res.json(userData);
+    res.json(userData)
   } catch (error) {
-    console.error('Error fetching user data:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching user data:', error)
+    res.status(500).json({ message: 'Server error' })
   }
-});
-
+})
 
 // Fetch all projects and the projects assigned to a specific member
 app.get('/projectsForMember/:memberId', async (req, res) => {
   try {
-    const memberId = req.params.memberId;
+    const memberId = req.params.memberId
 
     // Step 1: Find all tasks assigned to the specific member
-    const tasks = await Task.find({ assignedTo: memberId }).select('projectId');
+    const tasks = await Task.find({ assignedTo: memberId }).select('projectId')
 
     // Step 2: Extract unique project IDs
-    const projectIds = [...new Set(tasks.map(task => task.projectId))];
+    const projectIds = [...new Set(tasks.map((task) => task.projectId))]
 
     // Step 3: Fetch details of these projects
-    const projects = await Project.find({ _id: { $in: projectIds } });
+    const projects = await Project.find({ _id: { $in: projectIds } })
 
     res.json({
       allProjects: await Project.find(), // Fetch all projects
-      memberProjects: projects // Fetch projects assigned to the member
-    });
+      memberProjects: projects, // Fetch projects assigned to the member
+    })
   } catch (error) {
-    console.error('Error fetching projects:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching projects:', error)
+    res.status(500).json({ message: 'Server error' })
   }
-});
+})
 
 app.get('/projects/assigned/:userId', async (req, res) => {
   try {
@@ -471,30 +487,29 @@ app.put('/updateStatus/:taskId', async (req, res) => {
   }
 })
 
-
 // Get users with task counts
-app.get('/api/usersWithCounts', async (req, res) => {
+app.get('/usersWithCounts', async (req, res) => {
   try {
-    const users = await Member.find(); // Assuming you're interested in members
+    const users = await Member.find() // Assuming you're interested in members
 
     const userData = await Promise.all(
       users.map(async (user) => {
-        const taskCount = await Task.countDocuments({ assignedTo: user._id });
+        const taskCount = await Task.countDocuments({ assignedTo: user._id })
 
         return {
           _id: user._id,
           name: user.name,
           email: user.email,
           taskCount,
-        };
+        }
       })
-    );
+    )
 
-    res.json(userData);
+    res.json(userData)
   } catch (error) {
-    console.error('Error fetching user data:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching user data:', error)
+    res.status(500).json({ message: 'Server error' })
   }
-});
+})
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

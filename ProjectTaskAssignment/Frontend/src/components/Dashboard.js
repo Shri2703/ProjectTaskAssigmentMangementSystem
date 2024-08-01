@@ -8,6 +8,7 @@ import {
   getAllProjects,
   getAssignedProjects,
   getAssignedTasks,
+  uploadFile,
   updateTaskStatus,
 } from '../api/project'
 import './Dashboard.css' // Ensure this path is correct
@@ -27,6 +28,8 @@ const Dashboard = () => {
   })
   const [editingTaskId, setEditingTaskId] = useState(null)
   const [taskStatus, setTaskStatus] = useState('')
+  const [file, setFile] = useState(null)
+  const [fileUploadStatus, setFileUploadStatus] = useState(null)
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -113,6 +116,27 @@ const Dashboard = () => {
     setTaskStatus(status)
   }
 
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0])
+  }
+
+  const handleFileUpload = async () => {
+    try {
+      const storedTokens = JSON.parse(localStorage.getItem('decodedTokens'))
+      const userId = storedTokens?.[0]?.id
+
+      const response = await uploadFile(file, userId, editingTaskId)
+      if (response) {
+        setFileUploadStatus('File uploaded successfully')
+      } else {
+        setFileUploadStatus('Failed to upload file')
+      }
+    } catch (error) {
+      setFileUploadStatus('Failed to upload file')
+      console.error(error)
+    }
+  }
+
   const handleStatusUpdate = async () => {
     try {
       const updatedTask = await updateTaskStatus(editingTaskId, taskStatus)
@@ -128,6 +152,24 @@ const Dashboard = () => {
       console.error(error)
     }
   }
+
+ const getCardStyle = (status) => {
+  switch (status) {
+    case 'completed':
+      return {
+        border: '2px solid green',
+        borderRadius: '0.25rem', // Adjust border radius as needed
+        backgroundColor: 'white', // Keeping background color white
+      }
+    default:
+      return {
+        border: '1px solid #ddd',
+        borderRadius: '0.25rem', // Adjust border radius as needed
+        backgroundColor: 'white',
+      }
+  }
+}
+
 
   return (
     <div className='container-fluid d-flex p-0'>
@@ -188,7 +230,7 @@ const Dashboard = () => {
                   </div>
                 ))}
               </div>
-              <h2>Projects Assigned to You</h2>
+              <h2>Assigned Projects</h2>
               <div className='row'>
                 {assignedProjects.map((project) => (
                   <div className='col-md-4' key={project._id}>
@@ -208,13 +250,11 @@ const Dashboard = () => {
               <h1>Tasks</h1>
               <div className='row'>
                 {assignedTasks.map((task) => (
-                  <div
-                    className={`col-md-4 mb-4 ${
-                      task.status === 'completed' ? 'bg-success text-white' : ''
-                    }`}
-                    key={task._id}
-                  >
-                    <div className='card m-4'>
+                  <div className='col-md-4' key={task._id}>
+                    <div
+                      className='card mb-4'
+                      style={getCardStyle(task.status)}
+                    >
                       <div className='card-body'>
                         <h5 className='card-title'>{task.title}</h5>
                         <p className='card-text'>{task.description}</p>
@@ -224,16 +264,33 @@ const Dashboard = () => {
                             <div className='form-group mb-3'>
                               <label htmlFor='status'>Status</label>
                               <select
-                                id='status'
                                 className='form-control'
+                                id='status'
                                 value={taskStatus}
                                 onChange={(e) => setTaskStatus(e.target.value)}
                               >
-                                <option value='pending'>Pending</option>
-                                <option value='in-progress'>In Progress</option>
+                                <option value=''>Select Status</option>
+                                <option value='not started'>Not Started</option>
+                                <option value='in progress'>In Progress</option>
                                 <option value='completed'>Completed</option>
                               </select>
                             </div>
+                            <div className='form-group mb-3'>
+                              <label htmlFor='file'>File Upload</label>
+                              <input
+                                type='file'
+                                className='form-control'
+                                id='file'
+                                onChange={handleFileChange}
+                              />
+                            </div>
+                            <button
+                              className='btn btn-primary'
+                              onClick={handleFileUpload}
+                            >
+                              Upload File
+                            </button>
+                            <p>{fileUploadStatus}</p>
                             <button
                               className='btn btn-success'
                               onClick={handleStatusUpdate}
@@ -260,8 +317,56 @@ const Dashboard = () => {
           )}
           {activeSection === 'profile' && (
             <div>
-              <h1>Profile Section</h1>
-              {userInfo && (
+              <h1>Profile</h1>
+              {editMode ? (
+                <div>
+                  <div className='form-group mb-3'>
+                    <label htmlFor='name'>Name</label>
+                    <input
+                      type='text'
+                      className='form-control'
+                      id='name'
+                      name='name'
+                      value={formData.name}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className='form-group mb-3'>
+                    <label htmlFor='email'>Email</label>
+                    <input
+                      type='email'
+                      className='form-control'
+                      id='email'
+                      name='email'
+                      value={formData.email}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className='form-group mb-3'>
+                    <label htmlFor='password'>Password</label>
+                    <input
+                      type='password'
+                      className='form-control'
+                      id='password'
+                      name='password'
+                      value={formData.password}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <button
+                    className='btn btn-success'
+                    onClick={handleUpdateProfile}
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    className='btn btn-secondary'
+                    onClick={() => setEditMode(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
                 <div>
                   <p>Name: {userInfo.name}</p>
                   <p>Email: {userInfo.email}</p>
@@ -271,46 +376,6 @@ const Dashboard = () => {
                   >
                     Edit Profile
                   </button>
-                  {editMode && (
-                    <div className='mt-3'>
-                      <div className='mb-3'>
-                        <label className='form-label'>Name</label>
-                        <input
-                          type='text'
-                          className='form-control'
-                          name='name'
-                          value={formData.name}
-                          onChange={handleChange}
-                        />
-                      </div>
-                      <div className='mb-3'>
-                        <label className='form-label'>Email</label>
-                        <input
-                          type='email'
-                          className='form-control'
-                          name='email'
-                          value={formData.email}
-                          onChange={handleChange}
-                        />
-                      </div>
-                      <div className='mb-3'>
-                        <label className='form-label'>Password</label>
-                        <input
-                          type='password'
-                          className='form-control'
-                          name='password'
-                          value={formData.password}
-                          onChange={handleChange}
-                        />
-                      </div>
-                      <button
-                        className='btn btn-success'
-                        onClick={handleUpdateProfile}
-                      >
-                        Save Changes
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

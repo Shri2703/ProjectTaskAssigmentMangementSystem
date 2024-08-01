@@ -10,7 +10,6 @@ import {
 import { logoutUser } from '../redux/actions/authActions'
 import { useNavigate } from 'react-router-dom'
 
-
 import { FaBell, FaSearch } from 'react-icons/fa'
 import { useDispatch } from 'react-redux'
 import Button from '../components/Button'
@@ -48,8 +47,8 @@ const AdminDashboard = () => {
   const token = useSelector((state) => state.auth.token)
   const user = useSelector((state) => state.auth.user)
 
- const dispatch = useDispatch()
- const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
   const fetchProfileData = async () => {
     try {
       if (!token) {
@@ -65,6 +64,19 @@ const AdminDashboard = () => {
       setProfileData(profile) // Update state with fetched profile data
     } catch (error) {
       console.error('Error fetching profile data:', error)
+    }
+  }
+
+  const [selectedUserId, setSelectedUserId] = useState(null)
+  const [showTaskCount, setShowTaskCount] = useState(false)
+  
+  const handleViewMore = (userId) => {
+    // Toggle the visibility of task count for the selected user
+    if (selectedUserId === userId) {
+      setShowTaskCount(!showTaskCount)
+    } else {
+      setSelectedUserId(userId)
+      setShowTaskCount(true)
     }
   }
 
@@ -188,15 +200,14 @@ const AdminDashboard = () => {
     const { name, value } = e.target
     setUpdatedProject((prev) => ({ ...prev, [name]: value }))
   }
-  
+
   const handleLogout = () => {
     dispatch(logoutUser())
     // Clear the localStorage
     localStorage.removeItem('decodedTokens')
     // Navigate to homepage
     navigate('/')
-  }  
-  
+  }
 
   return (
     <div className='container-fluid p-0 d-flex'>
@@ -363,14 +374,25 @@ const AdminDashboard = () => {
                       <div className='card'>
                         <div className='card-body'>
                           <h5 className='card-title text-basic'>
-                            Name:{user.name}
+                            Name: {user.name}
                           </h5>
                           <p className='card-text text-basic'>
                             E-Mail: {user.email}
                           </p>
-                          <p className='card-text text-basic'>
-                            Tasks: {user.taskCount || 0}
-                          </p>
+                          
+                          <Button
+                            variant='info'
+                            onClick={() => handleViewMore(user._id)}
+                          >
+                            View More
+                          </Button>
+                          {user._id === selectedUserId && showTaskCount && (
+                            <div className='mt-2'>
+                              <p className='text-basic'>
+                                Total Tasks Assigned: {user.taskCount || 0}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -379,6 +401,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
+
           {/* {selectedTab === 'profile' && (
             <div>
               <form

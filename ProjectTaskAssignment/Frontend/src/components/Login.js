@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import axios from 'axios'
 import { useDispatch } from 'react-redux'
-import {jwtDecode} from 'jwt-decode'
+import { jwtDecode } from 'jwt-decode'
 import { useNavigate } from 'react-router-dom'
 import { setToken } from '../redux/actions/authActions'
 import Button from '../components/Button'
