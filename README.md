@@ -1,4 +1,4 @@
-#Project and Task Management System
+Project and Task Management System
 
 
 Overview:
