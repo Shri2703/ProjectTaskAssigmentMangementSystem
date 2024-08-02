@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import axios from 'axios'
 import { useDispatch } from 'react-redux'
-import { jwtDecode } from 'jwt-decode'
+import {jwtDecode} from 'jwt-decode'
 import { useNavigate } from 'react-router-dom'
 import { setToken } from '../redux/actions/authActions'
 import Button from '../components/Button'
@@ -47,9 +47,13 @@ const Login = () => {
     }
   }
 
+  const handleRegisterRedirect = () => {
+    navigate('/register')
+  }
+
   return (
     <div className='container d-flex justify-content-center align-items-center vh-100'>
-      <div className='card p-4' style={{ width: '100%', maxWidth: '400px' }}>
+      <div className='card p-3' style={{ width: '100%', maxWidth: '400px' }}>
         <h2 className='text-center mb-4'>Login</h2>
         <form onSubmit={onSubmit}>
           <div className='form-group p-2'>
@@ -78,6 +82,19 @@ const Login = () => {
             Login
           </Button>
         </form>
+        <div className='text-center mt-3'>
+          <p>
+            If you are a new user,{' '}
+            <span
+              className='text-primary'
+              style={{ cursor: 'pointer' }}
+              onClick={handleRegisterRedirect}
+            >
+              click here
+            </span>
+            .
+          </p>
+        </div>
       </div>
     </div>
   )

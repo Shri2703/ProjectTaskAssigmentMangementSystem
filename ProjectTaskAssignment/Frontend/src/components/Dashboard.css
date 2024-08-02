@@ -64,3 +64,11 @@ src/components/Dashboard.css
 .content {
   padding: 20px;
 }
+.dashboard-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* Adjust height as needed */
+  text-align: center;
+}

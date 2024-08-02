@@ -1,4 +1,3 @@
-// Register.js
 import React, { useState } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
@@ -27,6 +26,10 @@ const Register = () => {
     } catch (err) {
       console.error(err.response.data)
     }
+  }
+
+  const handleLoginRedirect = () => {
+    navigate('/login')
   }
 
   return (
@@ -71,6 +74,19 @@ const Register = () => {
             Register
           </Button>
         </form>
+        <div className='text-center mt-3'>
+          <p>
+            If you have an account,{' '}
+            <span
+              className='text-primary'
+              style={{ cursor: 'pointer' }}
+              onClick={handleLoginRedirect}
+            >
+              click here
+            </span>
+            .
+          </p>
+        </div>
       </div>
     </div>
   )

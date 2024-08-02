@@ -263,12 +263,13 @@ const AdminDashboard = () => {
             <span className='username'>Admin</span>
           </div>
         </div>
-        <div className='header d-flex justify-content-between align-items-center mb-4 pt-5'>
-          <h1>Welcome to Admin Dashboard</h1>
-        </div>
+
         <div className='content'>
           {selectedTab === 'projects' && (
             <div>
+              <div className='header d-flex justify-content-between align-items-center mb-4 pt-1'>
+                <h1>Welcome to Admin Dashboard</h1>
+              </div>
               <div className='d-flex justify-content-between mb-4'>
                 <h2 className='text-bold'>All Projects</h2>
                 <Button
@@ -379,7 +380,7 @@ const AdminDashboard = () => {
                           <p className='card-text text-basic'>
                             E-Mail: {user.email}
                           </p>
-                          
+
                           <Button
                             variant='info'
                             onClick={() => handleViewMore(user._id)}

@@ -12,7 +12,7 @@ import {
   updateTaskStatus,
 } from '../api/project'
 import './Dashboard.css' // Ensure this path is correct
-
+import { dashimg } from '../asserts'
 const Dashboard = () => {
   const [userInfo, setUserInfo] = useState(null)
   const [error, setError] = useState(null)
@@ -153,27 +153,26 @@ const Dashboard = () => {
     }
   }
 
- const getCardStyle = (status) => {
-  switch (status) {
-    case 'completed':
-      return {
-        border: '2px solid green',
-        borderRadius: '0.25rem', // Adjust border radius as needed
-        backgroundColor: 'white', // Keeping background color white
-      }
-    default:
-      return {
-        border: '1px solid #ddd',
-        borderRadius: '0.25rem', // Adjust border radius as needed
-        backgroundColor: 'white',
-      }
+  const getCardStyle = (status) => {
+    switch (status) {
+      case 'completed':
+        return {
+          border: '2px solid green',
+          borderRadius: '0.25rem', // Adjust border radius as needed
+          backgroundColor: 'white', // Keeping background color white
+        }
+      default:
+        return {
+          border: '1px solid #ddd',
+          borderRadius: '0.25rem', // Adjust border radius as needed
+          backgroundColor: 'white',
+        }
+    }
   }
-}
-
 
   return (
-    <div className='container-fluid d-flex p-0'>
-      <div className='sidebar bg-dark p-3'>
+    <div className='container-fluid d-flex p-0 '>
+      <div className='sidebar bg-dark p-3 pt-5'>
         <a
           className='nav-link'
           onClick={() => handleSectionChange('dashboard')}
@@ -194,26 +193,37 @@ const Dashboard = () => {
         </a>
       </div>
       <div className='main-content flex-grow-1 p-4'>
-        <div className='d-flex justify-content-between align-items-center mb-4'>
-          <div className='input-group'>
+        <div className='d-flex justify-content-between align-items-center mb-2'>
+          <div className='input-group w-50'>
             <input
               type='text'
               className='form-control'
               placeholder='Search...'
             />
-            <button className='btn btn-outline-secondary '>
+            <button className='btn btn-outline-secondary'>
               <FaSearch />
             </button>
           </div>
-          <div className='d-flex align-items-center'>
-            <FaBell className='me-3' />
+          <div className='d-flex align-items-center py-2'>
+            <FaBell className='me-2' />
             <span className='username'>
               {userInfo ? userInfo.name : 'Loading...'}
             </span>
           </div>
         </div>
+
         <div className='content'>
-          {activeSection === 'dashboard' && <h1>Welcome to the Dashboard</h1>}
+          {activeSection === 'dashboard' && (
+            <div className='dashboard-center'>
+              <h1>Welcome to the Dashboard</h1>
+              <img
+                src={dashimg} // Update this path to your image
+                alt='Dashboard'
+                className='img-fluid mt-1 w-50'
+              />
+            </div>
+          )}
+
           {activeSection === 'projects' && (
             <div>
               <h1>Projects</h1>
@@ -258,115 +268,88 @@ const Dashboard = () => {
                       <div className='card-body'>
                         <h5 className='card-title'>{task.title}</h5>
                         <p className='card-text'>{task.description}</p>
-                        <p className='card-text'>Status: {task.status}</p>
                         {editingTaskId === task._id ? (
                           <div>
-                            <div className='form-group mb-3'>
-                              <label htmlFor='status'>Status</label>
-                              <select
-                                className='form-control'
-                                id='status'
-                                value={taskStatus}
-                                onChange={(e) => setTaskStatus(e.target.value)}
-                              >
-                                <option value=''>Select Status</option>
-                                <option value='not started'>Not Started</option>
-                                <option value='in progress'>In Progress</option>
-                                <option value='completed'>Completed</option>
-                              </select>
-                            </div>
-                            <div className='form-group mb-3'>
-                              <label htmlFor='file'>File Upload</label>
-                              <input
-                                type='file'
-                                className='form-control'
-                                id='file'
-                                onChange={handleFileChange}
-                              />
-                            </div>
+                            <select
+                              value={taskStatus}
+                              onChange={(e) =>
+                                handleStatusChange(task._id, e.target.value)
+                              }
+                              className='form-select mb-2'
+                            >
+                              <option value='pending'>pending</option>
+                              <option value='in-process'>in-progress</option>
+                              <option value='completed'>Completed</option>
+                            </select>
                             <button
                               className='btn btn-primary'
-                              onClick={handleFileUpload}
-                            >
-                              Upload File
-                            </button>
-                            <p>{fileUploadStatus}</p>
-                            <button
-                              className='btn btn-success'
                               onClick={handleStatusUpdate}
                             >
                               Update Status
                             </button>
                           </div>
                         ) : (
-                          <button
-                            className='btn btn-primary'
-                            onClick={() =>
-                              handleStatusChange(task._id, task.status)
-                            }
-                          >
-                            Update Status
-                          </button>
+                          <div>
+                            <p>Status: {task.status}</p>
+                            <button
+                              className='btn btn-primary'
+                              onClick={() =>
+                                handleStatusChange(task._id, task.status)
+                              }
+                            >
+                              Edit Status
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+              <div className='mt-2 col-md-4'>
+                <h2 className='card-title'>Upload File</h2>
+                <div className='card'>
+                  <div className='card-body'>
+                    <p>select the file and upload</p>
+                    <div className='input-group '>
+                      <input
+                        type='file'
+                        onChange={handleFileChange}
+                        className='form-control mb-2'
+                        id='fileUploadInput'
+                      />
+                    </div>
+
+                    <div className='d-flex justify-content-around'>
+                      <button
+                        className='btn btn-primary'
+                        onClick={handleFileUpload}
+                      >
+                        Upload
+                      </button>
+                      <button
+                        className='btn btn-secondary'
+                        onClick={() => {
+                          document.getElementById('fileUploadInput').value = '' // Clear file input
+                          setFile(null)
+                          setFileUploadStatus(null) // Clear file state
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    {fileUploadStatus && (
+                      <p className='mt-2'>{fileUploadStatus}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
           {activeSection === 'profile' && (
             <div>
               <h1>Profile</h1>
-              {editMode ? (
-                <div>
-                  <div className='form-group mb-3'>
-                    <label htmlFor='name'>Name</label>
-                    <input
-                      type='text'
-                      className='form-control'
-                      id='name'
-                      name='name'
-                      value={formData.name}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className='form-group mb-3'>
-                    <label htmlFor='email'>Email</label>
-                    <input
-                      type='email'
-                      className='form-control'
-                      id='email'
-                      name='email'
-                      value={formData.email}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className='form-group mb-3'>
-                    <label htmlFor='password'>Password</label>
-                    <input
-                      type='password'
-                      className='form-control'
-                      id='password'
-                      name='password'
-                      value={formData.password}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <button
-                    className='btn btn-success'
-                    onClick={handleUpdateProfile}
-                  >
-                    Save Changes
-                  </button>
-                  <button
-                    className='btn btn-secondary'
-                    onClick={() => setEditMode(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
+              {userInfo && !editMode && (
                 <div>
                   <p>Name: {userInfo.name}</p>
                   <p>Email: {userInfo.email}</p>
@@ -378,8 +361,61 @@ const Dashboard = () => {
                   </button>
                 </div>
               )}
+              {editMode && (
+                <div>
+                  <div className='mb-3'>
+                    <label htmlFor='name' className='form-label'>
+                      Name
+                    </label>
+                    <input
+                      type='text'
+                      name='name'
+                      value={formData.name}
+                      onChange={handleChange}
+                      className='form-control'
+                    />
+                  </div>
+                  <div className='mb-3'>
+                    <label htmlFor='email' className='form-label'>
+                      Email
+                    </label>
+                    <input
+                      type='email'
+                      name='email'
+                      value={formData.email}
+                      onChange={handleChange}
+                      className='form-control'
+                    />
+                  </div>
+                  <div className='mb-3'>
+                    <label htmlFor='password' className='form-label'>
+                      Password
+                    </label>
+                    <input
+                      type='password'
+                      name='password'
+                      value={formData.password}
+                      onChange={handleChange}
+                      className='form-control'
+                    />
+                  </div>
+                  <button
+                    className='btn btn-primary'
+                    onClick={handleUpdateProfile}
+                  >
+                    Update Profile
+                  </button>
+                  <button
+                    className='btn btn-secondary ms-2'
+                    onClick={() => setEditMode(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           )}
+          {error && <p className='text-danger'>{error}</p>}
         </div>
       </div>
     </div>
