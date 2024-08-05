@@ -1,12 +1,12 @@
-Project and Task Management System
+# Project and Task Management System
 
 
-Overview:
+# Overview:
 
 
 The Project and Task Management System is a comprehensive application designed for efficient management of projects and tasks. This system provides an intuitive interface for both administrators and members, facilitating smooth project oversight, task assignment, status updates, and file handling. Built using the MERN stack (MongoDB, Express, React, Node.js), it incorporates role-based access with distinct features for administrators and regular members.
 
-Features:
+# Features:
 
 1)Role-Based Access:
 
@@ -24,14 +24,14 @@ Features:
 
 8)Real-time Updates: Immediate reflection of changes in task statuses and project assignments.
 
-Technologies Used
+# Technologies Used
 
-Frontend:
+# Frontend:
 
 React 18
 Bootstrap CSS
 
-Backend:
+# Backend:
 
 Node.js
 Express
@@ -39,7 +39,7 @@ MongoDB
 JWT Authentication
 
 
-Prerequisites
+# Prerequisites
 
 Node.js and npm
 MongoDB
@@ -50,16 +50,16 @@ Postman (for API testing)
 
 
 
-Usage
+# Usage
 
-Admin Dashboard:
+# Admin Dashboard:
 
 Manage users and view overall project and task statuses.
 Create, update, and delete projects.
 Assign tasks to users and monitor their progress.
 
-License
+# License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-Contact
-For any questions or feedback, please contact me at your-email@example.com.
+# Contact
+For any questions or feedback, please contact me at poornashri2703@gmail.com
